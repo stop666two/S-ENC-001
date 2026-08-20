@@ -1,3 +1,5 @@
+use crate::compress::is_already_compressed;
+
 /// Rough overhead per block: nonce not stored per block in data (nonces live in header),
 /// but each 1MB plaintext block gains a 16-byte GCM tag. Plus header (~4KB typical) and
 /// the 72-byte param block.
@@ -9,10 +11,13 @@ pub fn estimate_encrypted_size(
     original_size: u64,
     _compress_level: u8,
     mode: &str,
-    _filename: &str,
+    filename: &str,
 ) -> Result<u64, String> {
     let use_compression = match mode {
-        "on" => true,
+        // Compress unless the name already suggests a compressed format; for those
+        // assuming 70% would understate the real size (zstd cannot shrink
+        // incompressible data), so fall back to the uncompressed upper bound.
+        "on" => !is_already_compressed(filename),
         "off" => false,
         "auto" => {
             // Content entropy is unknowable ahead of time. Estimating
@@ -64,9 +69,18 @@ mod tests {
     }
 
     #[test]
-    fn test_estimate_on() {
-        let e = estimate_encrypted_size(100, 3, "on", "any.bin").unwrap();
-        assert!(e > 100);
+    fn test_estimate_on_text() {
+        // .txt -> compression assumed -> estimate below original size
+        let e = estimate_encrypted_size(1_000_000, 3, "on", "doc.txt").unwrap();
+        assert!(e < 1_000_000, "on mode should assume compression for text, got {e}");
+        assert!(e > 700_000);
+    }
+
+    #[test]
+    fn test_estimate_on_compressed_ext() {
+        // .zip already compressed -> uncompressed upper bound (never understate)
+        let e = estimate_encrypted_size(1_000_000, 3, "on", "archive.zip").unwrap();
+        assert!(e > 1_000_000 && e < 1_100_000);
     }
 
     #[test]
