@@ -26,13 +26,27 @@ const MAGIC: MagicSig[] = [
   { sig: [0x28, 0xb5, 0x2f, 0xfd], mime: "zstd" },
 ];
 
-function escapeHtml(s: string): string {
+const COPY_FULL_LIMIT = 8 * 1024 * 1024;
+
+export function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+export function decodeText(bytes: Uint8Array): string {
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    try {
+      return new TextDecoder("gb18030").decode(bytes);
+    } catch {
+      return new TextDecoder("utf-8", { fatal: false }).decode(bytes);
+    }
+  }
 }
 
 export class ResultModal {
@@ -57,15 +71,8 @@ export class ResultModal {
       if (b === 9 || b === 10 || b === 13 || (b >= 32 && b <= 126) || b >= 0x80) printable++;
     }
     if (sample.length > 0 && printable / sample.length >= 0.95) {
-      let preview = "";
-      try {
-        preview = new TextDecoder("utf-8", { fatal: false }).decode(
-          bytes.subarray(0, Math.min(size, 400))
-        );
-      } catch {
-        preview = "";
-      }
-      return { name, size, data, kind: "text", preview: preview.slice(0, 100) };
+      const preview = decodeText(bytes.subarray(0, Math.min(size, 400))).slice(0, 100);
+      return { name, size, data, kind: "text", preview };
     }
     return { name, size, data, kind: "binary", mime: "binary" };
   }
@@ -76,14 +83,18 @@ export class ResultModal {
       overlay.className = "modal-overlay";
       const single = items.length === 1;
 
-      const block = (it: DecryptResultItem): string => {
+      const block = (it: DecryptResultItem, i: number): string => {
         const meta = `${it.name} (${(it.size / 1024).toFixed(1)} KB)`;
         if (it.kind === "text") {
+          const copyBtn = it.size <= COPY_FULL_LIMIT
+            ? `<button id="rm-copy-${i}" type="button" class="term-btn result-copy">${i18n.t("modal.result.copy.full")}</button>`
+            : "";
           return `
             <div class="result-block">
               <div class="result-meta">${escapeHtml(meta)}</div>
               <div class="result-preview">${escapeHtml(it.preview ?? "")}</div>
               <div class="result-note">${i18n.t("modal.result.preview.note")}</div>
+              ${copyBtn}
             </div>`;
         }
         return `
@@ -100,8 +111,8 @@ export class ResultModal {
       for (let i = 0; i < items.length; i++) {
         const it = items[i];
         rows += single
-          ? block(it)
-          : `<label class="result-item"><input type="checkbox" data-idx="${i}" checked>${block(it)}</label>`;
+          ? block(it, i)
+          : `<label class="result-item"><input type="checkbox" data-idx="${i}" checked>${block(it, i)}</label>`;
       }
       const listHeader = single
         ? ""
@@ -129,6 +140,7 @@ export class ResultModal {
 
       const cleanup = (): void => {
         overlay.remove();
+        document.removeEventListener("keydown", onKey);
       };
       const allCb = overlay.querySelector<HTMLInputElement>("#rm-all");
       const updateLabel = (): void => {
@@ -156,6 +168,21 @@ export class ResultModal {
           updateLabel();
         });
       }
+      items.forEach((it, i) => {
+        const copyBtn = overlay.querySelector("#rm-copy-" + i) as HTMLElement | null;
+        if (!copyBtn) return;
+        copyBtn.onclick = async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          try {
+            await navigator.clipboard.writeText(decodeText(new Uint8Array(it.data)));
+            copyBtn.textContent = i18n.t("modal.result.copied");
+            setTimeout(() => { copyBtn.textContent = i18n.t("modal.result.copy.full"); }, 800);
+          } catch {
+            // clipboard unavailable
+          }
+        };
+      });
       (overlay.querySelector("#rm-download") as HTMLElement).onclick = () => {
         cleanup();
         if (single) {
@@ -178,6 +205,19 @@ export class ResultModal {
           resolve(null);
         }
       });
+      const onKey = (e: KeyboardEvent): void => {
+        if (e.key === "Escape") {
+          cleanup();
+          resolve(null);
+          return;
+        }
+        if (e.key === "Enter") {
+          const t = e.target as HTMLElement | null;
+          if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "BUTTON")) return;
+          (overlay.querySelector("#rm-download") as HTMLElement).click();
+        }
+      };
+      document.addEventListener("keydown", onKey);
       (overlay.querySelector("#rm-download") as HTMLElement).focus();
     });
   }

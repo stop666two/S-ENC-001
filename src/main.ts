@@ -9,6 +9,7 @@ import { PasswordModal } from "./ui/passwordModal";
 import { ModeChoice } from "./ui/modeChoice";
 import { ConfirmModal } from "./ui/confirmModal";
 import { ResultModal, DecryptResultItem } from "./ui/resultModal";
+import { PhraseModal } from "./ui/phraseModal";
 import { MainWorker, WorkerEvent } from "./worker/mainWorker";
 import { triggerDownload } from "./core/download";
 import { ClipboardManager } from "./core/clipboard";
@@ -44,6 +45,7 @@ class App {
   private _lastOp: "encrypt" | "decrypt" | null = null;
   private _lastDecryptMetadata: Record<string, unknown> | null = null;
   private _pendingSplitSize = 0;
+  private _lastPlainSize = 0;
 
   constructor() {
     const appEl = document.getElementById("app")!;
@@ -144,6 +146,19 @@ class App {
     const splitMB = this._pendingSplitSize;
     this._pendingSplitSize = 0;
 
+    const plain = this._lastPlainSize;
+    this._lastPlainSize = 0;
+    if (plain > 0) {
+      const enc = data.byteLength;
+      let pct = ((plain - enc) / plain) * 100;
+      if (Math.abs(pct) < 0.05) pct = 0;
+      this.log(this.i18n.t(pct < 0 ? "log.expansion" : "log.compression", {
+        pct: Math.abs(pct).toFixed(1),
+        orig: this.estimator.formatSize(plain),
+        enc: this.estimator.formatSize(enc),
+      }));
+    }
+
     if (splitMB > 0 && data.byteLength > splitMB * 1024 * 1024) {
       try {
         const wasm = await loadWasm();
@@ -235,7 +250,13 @@ class App {
 
   private async handleDrop(files: File[]): Promise<void> {
     this.log(this.i18n.t("log.received", { count: files.length }));
-    for (const f of files) this.log(this.i18n.t("log.select", { name: f.name, size: (f.size / 1024).toFixed(1) }));
+    const shown = files.slice(0, 5);
+    for (const f of shown) {
+      this.log(this.i18n.t("log.select", { name: f.webkitRelativePath || f.name, size: (f.size / 1024).toFixed(1) }));
+    }
+    if (files.length > shown.length) {
+      this.log(this.i18n.t("log.files.more", { count: files.length - shown.length }));
+    }
     if (this.busy) return;
     await this.runEncrypt(files, "files");
   }
@@ -292,13 +313,14 @@ class App {
         this.log(this.i18n.t("log.packing", { count: files.length }));
         const entries: { name: string; data_b64: string }[] = [];
         for (const f of files) {
+          const entryName = f.webkitRelativePath || f.name;
           const buf = new Uint8Array(await f.arrayBuffer());
           const chunks: string[] = [];
           const step = 0x8000;
           for (let i = 0; i < buf.length; i += step) {
             chunks.push(String.fromCharCode(...buf.subarray(i, i + step)));
           }
-          entries.push({ name: f.name, data_b64: btoa(chunks.join("")) });
+          entries.push({ name: entryName, data_b64: btoa(chunks.join("")) });
         }
         // Use wasm pack_tar via a direct import (dynamic)
         const wasm = await loadWasm();
@@ -312,6 +334,7 @@ class App {
       const est = await this.estimator.estimate(payload.byteLength, opts.compressLevel ?? 3, opts.mode ?? "auto", filename);
       this.log(this.i18n.t("log.estimate", { size: this.estimator.formatSize(est) }));
 
+      this._lastPlainSize = payload.byteLength;
       this.lastEncryptedName = (opts.textContent !== undefined ? "text" : (files.length === 1 ? files[0].name : "archive")) + ".enc";
       this._pendingSplitSize = opts.splitSize ?? 0;
       const options: Record<string, unknown> = {
@@ -400,8 +423,7 @@ class App {
       const phrase = wasm.generate_recovery_phrase(count);
       this.log(this.i18n.t("log.phrase.value", { phrase }));
       this.log(this.i18n.t("log.phrase.warn"));
-      await this.clipboard.copy(phrase);
-      this.log(this.i18n.t("log.copied"));
+      await PhraseModal.show(phrase);
     } catch (err) {
       this.log(this.i18n.t("log.phrase.fail", { err: String(err) }));
     }
