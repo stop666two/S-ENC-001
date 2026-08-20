@@ -6,6 +6,7 @@ import { DragDrop } from "./ui/dragDrop";
 import { ProgressBar } from "./ui/progress";
 import { PasswordGenerator } from "./ui/passwordGen";
 import { PasswordModal } from "./ui/passwordModal";
+import { ModeChoice } from "./ui/modeChoice";
 import { MainWorker, WorkerEvent } from "./worker/mainWorker";
 import { triggerDownload } from "./core/download";
 import { ClipboardManager } from "./core/clipboard";
@@ -38,7 +39,7 @@ class App {
   private estimator: SizeEstimator;
   private busy = false;
   private lastEncryptedName = "";
-  private _lastOp: "encrypt" | "decrypt" | "hash" | "hmac" | null = null;
+  private _lastOp: "encrypt" | "decrypt" | null = null;
   private _lastDecryptMetadata: Record<string, unknown> | null = null;
   private _pendingSplitSize = 0;
 
@@ -81,11 +82,8 @@ class App {
       ,'  <div id="sidebar">'
       ,'    <button id="btn-encrypt" class="term-btn" data-i18n="btn.encrypt">[encrypt]</button>'
       ,'    <button id="btn-decrypt" class="term-btn" data-i18n="btn.decrypt">[decrypt]</button>'
-      ,'    <button id="btn-hash" class="term-btn" data-i18n="btn.hash">[hash]</button>'
-      ,'    <button id="btn-hmac" class="term-btn" data-i18n="btn.hmac">[HMAC]</button>'
       ,'    <button id="btn-password" class="term-btn" data-i18n="btn.password">[password]</button>'
       ,'    <button id="btn-phrase" class="term-btn" data-i18n="btn.phrase">[phrase]</button>'
-      ,'    <button id="btn-batch" class="term-btn" data-i18n="btn.batch">[batch]</button>'
       ,'    <button id="btn-clear" class="term-btn danger" data-i18n="btn.clear">[clear]</button>'
       ,'  </div>'
       ,'  <div id="content">'
@@ -114,24 +112,18 @@ class App {
     if (e.type === "progress") {
       this.progress.show(e.current, e.total);
     } else if (e.type === "error") {
-      // Security: wrong password / corruption - silent 10s delay before any output
-      // (prevents timing attacks; matches design doc section 3.5)
-      const isDecryptError = this._lastOp === "decrypt";
-      if (isDecryptError) {
-        this.log(this.i18n.t("log.verifying"));
-        const input = document.querySelector("#pm-password") as HTMLInputElement | null;
-        if (input) input.disabled = true;
+      // Security: wrong password / corruption - fully silent 10s delay before the
+      // error message (prevents timing attacks; matches design doc section 3.5).
+      // No progress/log/UI change leaks the failure during the delay.
+      if (this._lastOp === "decrypt") {
         setTimeout(() => {
           this.log(this.i18n.t("error.wrong.password"));
-          if (input) input.disabled = false;
-          this.progress.clear();
-          this.setBusy(false);
         }, 10000);
       } else {
         this.log(this.i18n.t("log.error.generic", { err: e.message }));
-        this.progress.clear();
-        this.setBusy(false);
       }
+      this.progress.clear();
+      this.setBusy(false);
     } else if (e.type === "done") {
       if (this._lastOp === "decrypt") this._lastDecryptMetadata = e.metadata ?? null;
       this.progress.clear();
@@ -141,8 +133,6 @@ class App {
         this.onEncryptDone(e.data);
       } else if (kind === "decrypt") {
         void this.onDecryptDone(e.data, (e.metadata as Record<string, unknown>)?.headerJson as string);
-      } else if (kind === "hash") {
-        this.onHashDone(e.data, (e.metadata as Record<string, unknown>)?.algorithm as string);
       }
     }
   }
@@ -220,23 +210,6 @@ class App {
     }
   }
 
-  private onHashDone(data: ArrayBuffer, algorithm: string): void {
-    const hex = this.bytesToHex(new Uint8Array(data));
-    this.log(`> ${algorithm.toUpperCase()}: ${hex}`);
-    void this.clipboard.copy(hex);
-    this.log(this.i18n.t("log.hash.copy"));
-    // Expected hash comparison
-    const expected = window.prompt(this.i18n.t("prompt.hash.compare"), "");
-    if (expected && expected.trim()) {
-      const clean = expected.trim().toLowerCase();
-      if (clean === hex.toLowerCase()) {
-        this.log(this.i18n.t("log.match"));
-      } else {
-        this.log(this.i18n.t("log.mismatch"));
-      }
-    }
-  }
-
   private bytesToHex(bytes: Uint8Array): string {
     let out = "";
     for (const b of bytes) out += b.toString(16).padStart(2, "0");
@@ -246,11 +219,8 @@ class App {
   private bindEvents(): void {
     document.getElementById("btn-encrypt")!.onclick = () => void this.askEncrypt();
     document.getElementById("btn-decrypt")!.onclick = () => void this.askDecrypt();
-    document.getElementById("btn-hash")!.onclick = () => void this.askHash();
-    document.getElementById("btn-hmac")!.onclick = () => void this.askHmac();
     document.getElementById("btn-password")!.onclick = () => this.passwordGen.show();
     document.getElementById("btn-phrase")!.onclick = () => void this.askPhrase();
-    document.getElementById("btn-batch")!.onclick = () => void this.askBatch();
     document.getElementById("btn-clear")!.onclick = () => this.cmdClear();
     document.getElementById("btn-lang")!.onclick = () => {
       this.i18n.toggle();
@@ -262,10 +232,16 @@ class App {
     this.log(this.i18n.t("log.received", { count: files.length }));
     for (const f of files) this.log(this.i18n.t("log.select", { name: f.name, size: (f.size / 1024).toFixed(1) }));
     if (this.busy) return;
-    await this.runEncrypt(files);
+    await this.runEncrypt(files, "files");
   }
 
   private async askEncrypt(): Promise<void> {
+    const choice = await ModeChoice.show();
+    if (!choice) { this.log(this.i18n.t("log.cancelled")); return; }
+    if (choice === "text") {
+      await this.runEncrypt([], "text");
+      return;
+    }
     const input = document.createElement("input");
     input.type = "file";
     input.multiple = true;
@@ -273,13 +249,13 @@ class App {
       const files = Array.from(input.files ?? []);
       if (!files.length) return;
       for (const f of files) this.log(this.i18n.t("log.select", { name: f.name, size: (f.size / 1024).toFixed(1) }));
-      await this.runEncrypt(files);
+      await this.runEncrypt(files, "files");
     };
     input.click();
   }
 
-  private async runEncrypt(files: File[]): Promise<void> {
-    const opts = await PasswordModal.show({ titleKey: "modal.encrypt.title", mode: "encrypt" });
+  private async runEncrypt(files: File[], lockContent?: "files" | "text"): Promise<void> {
+    const opts = await PasswordModal.show({ titleKey: "modal.encrypt.title", mode: "encrypt", lockContent });
     if (!opts) { this.log(this.i18n.t("log.cancelled")); return; }
 
     this.setBusy(true);
@@ -403,85 +379,6 @@ class App {
     input.click();
   }
 
-  private askHash(): void {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.onchange = async () => {
-      const file = input.files?.[0];
-      if (!file) return;
-      const algo = window.prompt(this.i18n.t("prompt.hash.algorithm"), "sha256") === "sha512" ? "sha512" : "sha256";
-      this.log(this.i18n.t("log.hash.compute", { algo: algo.toUpperCase(), name: file.name }));
-      this.setBusy(true);
-      const buf = await file.arrayBuffer();
-      this._lastOp = "hash";
-      this.worker.postMessage({ type: "hash", data: buf, algorithm: algo });
-    };
-    input.click();
-  }
-
-  private async askHmac(): Promise<void> {
-    const key = prompt(this.i18n.t("prompt.hmac.key"));
-    if (!key) return;
-    const data = prompt(this.i18n.t("prompt.hmac.data"));
-    if (!data) return;
-    this.log(this.i18n.t("log.hmac.compute"));
-    this.setBusy(true);
-    try {
-      const wasm = await loadWasm();
-      const enc = new TextEncoder();
-      const result = wasm.hmac_sha256(enc.encode(key), enc.encode(data));
-      const hex = this.bytesToHex(result);
-      this.log(`> HMAC-SHA256: ${hex}`);
-      await this.clipboard.copy(hex);
-      this.log(this.i18n.t("log.hmac.copy"));
-      this.setBusy(false);
-    } catch (err) {
-      this.log(this.i18n.t("log.hmac.fail", { err: String(err) }));
-      this.setBusy(false);
-    }
-  }
-
-  private async askBatch(): Promise<void> {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.multiple = true;
-    input.onchange = async () => {
-      const files = Array.from(input.files ?? []);
-      if (!files.length) return;
-      this.log(this.i18n.t("log.batch.task", { count: files.length }));
-      const opts = await PasswordModal.show({ titleKey: "modal.batch.title", mode: "encrypt" });
-      if (!opts) { this.log(this.i18n.t("log.cancelled")); return; }
-      this.setBusy(true);
-      try {
-        for (let i = 0; i < files.length; i++) {
-          const f = files[i];
-          const buf = await f.arrayBuffer();
-          this.log(this.i18n.t("log.batch.encrypt", { i: i + 1, total: files.length, name: f.name }));
-          this.lastEncryptedName = f.name + ".enc";
-          this._pendingSplitSize = opts.splitSize ?? 0;
-          this._lastOp = "encrypt";
-          this.worker.postMessage({
-            type: "encrypt",
-            data: buf,
-            password: opts.password,
-            options: {
-              compressLevel: opts.compressLevel ?? 3,
-              mode: opts.mode ?? "auto",
-              filename: f.name,
-              recoveryPhrase: opts.recoveryPhrase,
-            } as Record<string, unknown>,
-          });
-          // Wait a bit between tasks so downloads don't collide
-          await new Promise((r) => setTimeout(r, 300));
-        }
-      } catch (err) {
-        this.log(this.i18n.t("log.batch.fail", { err: String(err) }));
-        this.setBusy(false);
-      }
-    };
-    input.click();
-  }
-  
   private async askPhrase(): Promise<void> {
     const count = window.confirm(this.i18n.t("prompt.phrase.confirm")) ? 24 : 12;
     this.log(this.i18n.t("log.phrase.gen", { count }));

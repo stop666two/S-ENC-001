@@ -86,17 +86,6 @@ self.onmessage = async (e: MessageEvent<WorkerCommand>) => {
         });
         break;
       }
-      case "hash": {
-        const { data, algorithm } = cmd;
-        const bytes = new Uint8Array(data);
-        const result = algorithm === "sha512" ? w.sha512(bytes) : w.sha256(bytes);
-        post({
-          type: "done",
-          data: result.buffer as ArrayBuffer,
-          metadata: { kind: "hash", algorithm },
-        });
-        break;
-      }
       case "cancel":
       case "forceStop":
         break;

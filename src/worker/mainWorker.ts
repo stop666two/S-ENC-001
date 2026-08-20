@@ -1,7 +1,6 @@
 export type WorkerCommand =
   | { type: "encrypt"; data: ArrayBuffer; password: string; options: Record<string, unknown> }
   | { type: "decrypt"; data: ArrayBuffer; password: string; options?: Record<string, unknown> }
-  | { type: "hash"; data: ArrayBuffer; algorithm: "sha256" | "sha512" }
   | { type: "cancel" }
   | { type: "forceStop" };
 
