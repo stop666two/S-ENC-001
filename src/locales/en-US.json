@@ -141,5 +141,8 @@
   "hint.btn.phrase": "Generate a BIP39 recovery phrase (optional second factor when encrypting)",
   "hint.btn.clear": "Clear terminal and wipe clipboard sensitive data",
   "hint.btn.lang": "Switch UI language",
-  "hint.btn.theme": "Toggle light/dark theme"
+  "hint.btn.theme": "Toggle light/dark theme",
+  "hint.btn.theme.auto": "Theme: auto (follows system)",
+  "hint.btn.theme.light": "Theme: light",
+  "hint.btn.theme.dark": "Theme: dark"
 }

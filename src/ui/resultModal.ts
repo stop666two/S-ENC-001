@@ -1,4 +1,5 @@
 import { i18n } from "./i18n";
+import { setModalAria, trapFocus } from "./modalFocus";
 
 export interface DecryptResultItem {
   name: string;
@@ -137,6 +138,8 @@ export class ResultModal {
         </div>
       `;
       document.body.appendChild(overlay);
+      setModalAria(overlay, "rm-title");
+      trapFocus(overlay);
 
       const cleanup = (): void => {
         overlay.remove();

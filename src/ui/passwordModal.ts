@@ -1,4 +1,6 @@
 import { i18n } from "./i18n";
+import { PasswordGenerator } from "./passwordGen";
+import { setModalAria, trapFocus } from "./modalFocus";
 
 export interface ModalResult {
   password: string;
@@ -72,15 +74,18 @@ export class PasswordModal {
               <textarea id="pm-text" class="term-input" rows="4" style="display:none" placeholder="${i18n.t("modal.text.placeholder")}"></textarea>`
           : "";
 
-      const pwField = (id: string, labelKey: string, eyeId: string, hintKey: string): string => `
-        <label class="modal-field"><span>${i18n.t(labelKey)}</span><div class="pw-row"><input type="password" id="${id}" class="term-input" autocomplete="off" /><button type="button" id="${eyeId}" class="term-btn pw-toggle">${i18n.t("modal.show")}</button></div><div class="field-hint">${i18n.t(hintKey)}</div></label>`;
+      const genSuffix = (genId: string | undefined): string =>
+        genId ? `<button type="button" id="${genId}" class="term-btn pw-toggle">${i18n.t("pg.generate")}</button>` : "";
+
+      const pwField = (id: string, labelKey: string, eyeId: string, hintKey: string, genId?: string): string => `
+        <label class="modal-field"><span>${i18n.t(labelKey)}</span><div class="pw-row"><input type="password" id="${id}" class="term-input" autocomplete="off" /><button type="button" id="${eyeId}" class="term-btn pw-toggle">${i18n.t("modal.show")}</button>${genSuffix(genId)}</div><div class="field-hint">${i18n.t(hintKey)}</div></label>`;
 
       overlay.innerHTML = `
         <div class="modal">
           <h3>${i18n.t(options.titleKey)}</h3>
           <div class="modal-body">
             <form id="pm-form">
-              ${pwField("pm-password", "modal.password", "pm-eye", "hint.password")}
+              ${pwField("pm-password", "modal.password", "pm-eye", "hint.password", encrypt ? "pm-gen" : undefined)}
               ${encrypt ? pwField("pm-password2", "modal.password2", "pm-eye2", "hint.password2") + `<div id="pm-strength" class="pw-strength"></div>` : ""}
               ${contentRow}
               ${compressRow}
@@ -96,6 +101,8 @@ export class PasswordModal {
         </div>
       `;
       document.body.appendChild(overlay);
+      setModalAria(overlay, "pm-title");
+      trapFocus(overlay);
 
       const pw = overlay.querySelector("#pm-password") as HTMLInputElement;
       const pw2 = overlay.querySelector("#pm-password2") as HTMLInputElement | null;
@@ -124,6 +131,16 @@ export class PasswordModal {
       };
       eyeFor(pw, "pm-eye");
       if (pw2) eyeFor(pw2, "pm-eye2");
+
+      const genBtn = overlay.querySelector("#pm-gen") as HTMLElement | null;
+      if (genBtn) {
+        genBtn.onclick = () => {
+          new PasswordGenerator().show((p) => {
+            pw.value = p;
+            if (pw2) pw2.value = p;
+          });
+        };
+      }
 
       const strength = overlay.querySelector("#pm-strength") as HTMLElement | null;
       if (strength) {

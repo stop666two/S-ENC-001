@@ -1,5 +1,6 @@
 import { i18n } from "./i18n";
 import { escapeHtml } from "./resultModal";
+import { setModalAria, trapFocus } from "./modalFocus";
 
 export class PhraseModal {
   static show(phrase: string): Promise<void> {
@@ -20,6 +21,8 @@ export class PhraseModal {
         </div>
       `;
       document.body.appendChild(overlay);
+      setModalAria(overlay, "ph-title");
+      trapFocus(overlay);
 
       const onKey = (e: KeyboardEvent): void => {
         if (e.key === "Escape") {

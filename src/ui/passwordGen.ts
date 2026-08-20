@@ -1,10 +1,11 @@
 import { i18n } from "./i18n";
+import { setModalAria, trapFocus } from "./modalFocus";
 
 export class PasswordGenerator {
   private overlay: HTMLElement | null = null;
   private keyHandler: ((e: KeyboardEvent) => void) | null = null;
 
-  show(): void {
+  show(onUse?: (password: string) => void): void {
     this.overlay = document.createElement("div");
     this.overlay.className = "modal-overlay";
     this.overlay.innerHTML = `
@@ -28,6 +29,8 @@ export class PasswordGenerator {
       </div>
     `;
     document.body.appendChild(this.overlay);
+    setModalAria(this.overlay, "pg-title");
+    trapFocus(this.overlay);
 
     const lengthInput = this.overlay.querySelector("#pg-length") as HTMLInputElement;
     const lengthVal = this.overlay.querySelector("#pg-length-val") as HTMLElement;
@@ -56,7 +59,11 @@ export class PasswordGenerator {
     (this.overlay.querySelector("#pg-use") as HTMLElement).onclick = async () => {
       const result = this.overlay!.querySelector("#pg-result") as HTMLElement;
       if (result.textContent && !result.textContent.startsWith("[")) {
-        try { await navigator.clipboard.writeText(result.textContent); } catch { /* noop */ }
+        if (onUse) {
+          onUse(result.textContent);
+        } else {
+          try { await navigator.clipboard.writeText(result.textContent); } catch { /* noop */ }
+        }
       }
       this.close();
     };

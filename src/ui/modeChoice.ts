@@ -1,4 +1,5 @@
 import { i18n } from "./i18n";
+import { setModalAria, trapFocus } from "./modalFocus";
 
 export class ModeChoice {
   static show(): Promise<"files" | "text" | null> {
@@ -18,6 +19,8 @@ export class ModeChoice {
         </div>
       `;
       document.body.appendChild(overlay);
+      setModalAria(overlay, "mc-title");
+      trapFocus(overlay);
       const onKey = (e: KeyboardEvent) => {
         if (e.key === "Escape") {
           cleanup();

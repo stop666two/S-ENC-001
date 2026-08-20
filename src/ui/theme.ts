@@ -1,18 +1,37 @@
+import { i18n } from "./i18n";
+
+export type ThemeMode = "auto" | "light" | "dark";
+
 export class ThemeManager {
-  private isDark: boolean;
+  private mode: ThemeMode;
+  private mq: MediaQueryList;
 
   constructor() {
-    this.isDark = localStorage.getItem("s-enc-theme") !== "light";
+    const saved = localStorage.getItem("s-enc-theme") as ThemeMode | null;
+    this.mode = saved === "light" || saved === "dark" || saved === "auto" ? saved : "auto";
+    this.mq = window.matchMedia("(prefers-color-scheme: light)");
+    this.mq.addEventListener("change", () => {
+      if (this.mode === "auto") this.apply();
+    });
     this.apply();
+    this.updateButton();
   }
 
   toggle(): void {
-    this.isDark = !this.isDark;
-    localStorage.setItem("s-enc-theme", this.isDark ? "dark" : "light");
+    const order: ThemeMode[] = ["auto", "light", "dark"];
+    this.mode = order[(order.indexOf(this.mode) + 1) % order.length];
+    localStorage.setItem("s-enc-theme", this.mode);
     this.apply();
+    this.updateButton();
   }
 
   private apply(): void {
-    document.documentElement.setAttribute("data-theme", this.isDark ? "dark" : "light");
+    const light = this.mode === "light" || (this.mode === "auto" && this.mq.matches);
+    document.documentElement.setAttribute("data-theme", light ? "light" : "dark");
+  }
+
+  private updateButton(): void {
+    const btn = document.getElementById("btn-theme");
+    if (btn) btn.setAttribute("title", i18n.t("hint.btn.theme." + this.mode));
   }
 }

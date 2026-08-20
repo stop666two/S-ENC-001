@@ -24,11 +24,15 @@ function base64ToBytes(b64: string): Uint8Array {
   return bytes;
 }
 
-// Dynamic wasm loader from public dir
+// Dynamic wasm loader from public dir (cached singleton)
+let wasmPromise: Promise<typeof WasmTypes> | null = null;
 async function loadWasm(): Promise<typeof WasmTypes> {
-  const mod = await (import(/* @vite-ignore */ "/wasm/s_enc_core.js") as Promise<typeof WasmTypes>);
-  await mod.default();
-  return mod;
+  wasmPromise ??= (async () => {
+    const mod = await (import(/* @vite-ignore */ "/wasm/s_enc_core.js") as Promise<typeof WasmTypes>);
+    await mod.default();
+    return mod;
+  })();
+  return wasmPromise;
 }
 
 class App {
@@ -43,6 +47,7 @@ class App {
   private busy = false;
   private lastEncryptedName = "";
   private _lastOp: "encrypt" | "decrypt" | null = null;
+  private _errorTimer: number | null = null;
   private _lastDecryptMetadata: Record<string, unknown> | null = null;
   private _pendingSplitSize = 0;
   private _lastPlainSize = 0;
@@ -107,6 +112,10 @@ class App {
   }
 
   private setBusy(b: boolean): void {
+    if (b && this._errorTimer !== null) {
+      clearTimeout(this._errorTimer);
+      this._errorTimer = null;
+    }
     this.busy = b;
     const status = document.getElementById("status-text")!;
     status.textContent = this.i18n.t(b ? "status.busy" : "status.ready");
@@ -120,7 +129,8 @@ class App {
       // error message (prevents timing attacks; matches design doc section 3.5).
       // No progress/log/UI change leaks the failure during the delay.
       if (this._lastOp === "decrypt") {
-        setTimeout(() => {
+        this._errorTimer = window.setTimeout(() => {
+          this._errorTimer = null;
           this.log(this.i18n.t("error.wrong.password"));
         }, 10000);
       } else {
@@ -246,10 +256,29 @@ class App {
       this.i18n.toggle();
     };
     document.getElementById("btn-theme")!.onclick = () => this.theme.toggle();
+    window.addEventListener("keydown", (e) => {
+      if (!e.ctrlKey || e.shiftKey || e.altKey || e.metaKey) return;
+      if (document.querySelector(".modal-overlay")) return;
+      if (this.busy) return;
+      const k = e.key.toLowerCase();
+      if (k === "e") {
+        e.preventDefault();
+        void this.askEncrypt();
+      } else if (k === "d") {
+        e.preventDefault();
+        void this.askDecrypt();
+      }
+    });
   }
 
   private async handleDrop(files: File[]): Promise<void> {
     this.log(this.i18n.t("log.received", { count: files.length }));
+    const allEnc = files.length > 0 && files.every((f) => /[.]enc$/i.test(f.name) || /[.]part[0-9]+$/i.test(f.name));
+    if (allEnc) {
+      if (this.busy) return;
+      await this.decryptFiles(files);
+      return;
+    }
     const shown = files.slice(0, 5);
     for (const f of shown) {
       this.log(this.i18n.t("log.select", { name: f.webkitRelativePath || f.name, size: (f.size / 1024).toFixed(1) }));
@@ -361,15 +390,21 @@ class App {
     input.onchange = async () => {
       const files = Array.from(input.files ?? []);
       if (!files.length) return;
-      for (const f of files) this.log(this.i18n.t("log.select", { name: f.name, size: (f.size / 1024).toFixed(1) }));
-      const opts = await PasswordModal.show({ titleKey: "modal.decrypt.title", mode: "decrypt" });
-      if (!opts) { this.log(this.i18n.t("log.cancelled")); return; }
+      await this.decryptFiles(files);
+    };
+    input.click();
+  }
 
-      this.setBusy(true);
-      try {
-        // Merge .part files if multiple selected
-        let data: ArrayBuffer;
-        if (files.length > 1 && files.every((f) => /\.part\d+$/.test(f.name))) {
+  private async decryptFiles(files: File[]): Promise<void> {
+    for (const f of files) this.log(this.i18n.t("log.select", { name: f.name, size: (f.size / 1024).toFixed(1) }));
+    const opts = await PasswordModal.show({ titleKey: "modal.decrypt.title", mode: "decrypt" });
+    if (!opts) { this.log(this.i18n.t("log.cancelled")); return; }
+
+    this.setBusy(true);
+    try {
+      // Merge .part files if multiple selected
+      let data: ArrayBuffer;
+      if (files.length > 1 && files.every((f) => /[.]part[0-9]+$/.test(f.name))) {
           this.log(this.i18n.t("log.merge", { count: files.length }));
           const sorted = [...files].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
           const parts = await Promise.all(sorted.map((f) => f.arrayBuffer()));
@@ -403,8 +438,6 @@ class App {
         this.log(this.i18n.t("log.decrypt.fail", { err: String(err) }));
         this.setBusy(false);
       }
-    };
-    input.click();
   }
 
   private async askPhrase(): Promise<void> {

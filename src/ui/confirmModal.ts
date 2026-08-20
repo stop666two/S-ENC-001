@@ -1,4 +1,5 @@
 import { i18n } from "./i18n";
+import { setModalAria, trapFocus } from "./modalFocus";
 
 export class ConfirmModal {
   static show(options: { titleKey: string; message: string; danger?: boolean }): Promise<boolean> {
@@ -19,6 +20,8 @@ export class ConfirmModal {
         </div>
       `;
       document.body.appendChild(overlay);
+      setModalAria(overlay, "cm-title");
+      trapFocus(overlay);
       const onKey = (e: KeyboardEvent) => {
         if (e.key === "Escape") {
           cleanup();
@@ -67,6 +70,8 @@ export class ConfirmModal {
         </div>
       `;
       document.body.appendChild(overlay);
+      setModalAria(overlay, "cm-title-choose");
+      trapFocus(overlay);
       const onKey = (e: KeyboardEvent) => {
         if (e.key === "Escape") {
           cleanup();

@@ -141,5 +141,8 @@
   "hint.btn.phrase": "生成 BIP39 恢复短语（加密时的可选第二因素）",
   "hint.btn.clear": "清空终端并清除剪贴板敏感数据",
   "hint.btn.lang": "切换界面语言",
-  "hint.btn.theme": "切换深浅主题"
+  "hint.btn.theme": "切换深浅主题",
+  "hint.btn.theme.auto": "主题: 自动 (跟随系统)",
+  "hint.btn.theme.light": "主题: 浅色",
+  "hint.btn.theme.dark": "主题: 深色"
 }
