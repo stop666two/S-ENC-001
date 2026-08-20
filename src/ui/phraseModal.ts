@@ -11,6 +11,7 @@ export class PhraseModal {
           <h3>${i18n.t("modal.phrase.title")}</h3>
           <div class="modal-body">
             <div class="phrase-box">${escapeHtml(phrase)}</div>
+            <div class="field-hint">${i18n.t("hint.phrase.modal")}</div>
             <div class="modal-actions">
               <button id="ph-copy" class="term-btn">${i18n.t("modal.phrase.copy")}</button>
               <button id="ph-close" class="term-btn">${i18n.t("modal.phrase.close")}</button>

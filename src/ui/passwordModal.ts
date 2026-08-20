@@ -47,13 +47,13 @@ export class PasswordModal {
 
       const compressRow =
         encrypt
-          ? `<label class="modal-field"><span>${i18n.t("modal.level")}</span><select id="pm-level" class="term-input">${levelOptions}</select></label>
-          <label class="modal-field"><span>${i18n.t("modal.mode")}</span><select id="pm-mode" class="term-input">${modeOptions}</select></label>`
+          ? `<label class="modal-field"><span>${i18n.t("modal.level")}</span><select id="pm-level" class="term-input">${levelOptions}</select><div class="field-hint">${i18n.t("hint.level")}</div></label>
+          <label class="modal-field"><span>${i18n.t("modal.mode")}</span><select id="pm-mode" class="term-input">${modeOptions}</select><div class="field-hint">${i18n.t("hint.mode")}</div></label>`
           : `<input type="hidden" id="pm-level" value="3" /><input type="hidden" id="pm-mode" value="auto" />`;
 
       const splitRow =
         encrypt
-          ? `<label class="modal-field"><span>${i18n.t("modal.split")}</span><input type="number" id="pm-split" class="term-input" min="0" max="4095" value="${savedSplit}" /></label>`
+          ? `<label class="modal-field"><span>${i18n.t("modal.split")}</span><input type="number" id="pm-split" class="term-input" min="0" max="4095" value="${savedSplit}" /><div class="field-hint">${i18n.t("hint.split")}</div></label>`
           : `<input type="hidden" id="pm-split" value="0" />`;
 
       const contentRow =
@@ -72,21 +72,21 @@ export class PasswordModal {
               <textarea id="pm-text" class="term-input" rows="4" style="display:none" placeholder="${i18n.t("modal.text.placeholder")}"></textarea>`
           : "";
 
-      const pwField = (id: string, labelKey: string, eyeId: string): string => `
-        <label class="modal-field"><span>${i18n.t(labelKey)}</span><div class="pw-row"><input type="password" id="${id}" class="term-input" autocomplete="off" /><button type="button" id="${eyeId}" class="term-btn pw-toggle">${i18n.t("modal.show")}</button></div></label>`;
+      const pwField = (id: string, labelKey: string, eyeId: string, hintKey: string): string => `
+        <label class="modal-field"><span>${i18n.t(labelKey)}</span><div class="pw-row"><input type="password" id="${id}" class="term-input" autocomplete="off" /><button type="button" id="${eyeId}" class="term-btn pw-toggle">${i18n.t("modal.show")}</button></div><div class="field-hint">${i18n.t(hintKey)}</div></label>`;
 
       overlay.innerHTML = `
         <div class="modal">
           <h3>${i18n.t(options.titleKey)}</h3>
           <div class="modal-body">
             <form id="pm-form">
-              ${pwField("pm-password", "modal.password", "pm-eye")}
-              ${encrypt ? pwField("pm-password2", "modal.password2", "pm-eye2") + `<div id="pm-strength" class="pw-strength"></div>` : ""}
+              ${pwField("pm-password", "modal.password", "pm-eye", "hint.password")}
+              ${encrypt ? pwField("pm-password2", "modal.password2", "pm-eye2", "hint.password2") + `<div id="pm-strength" class="pw-strength"></div>` : ""}
               ${contentRow}
               ${compressRow}
               ${splitRow}
-              <label class="modal-field"><span>${i18n.t("modal.phrase")}</span><input type="text" id="pm-phrase" class="term-input" placeholder="${i18n.t("modal.phrase.placeholder")}" /></label>
-              <label class="modal-field"><span>${i18n.t("modal.keyfile")}</span><input type="file" id="pm-keyfile" class="term-input" /></label>
+              <label class="modal-field"><span>${i18n.t("modal.phrase")}</span><input type="text" id="pm-phrase" class="term-input" placeholder="${i18n.t("modal.phrase.placeholder")}" /><div class="field-hint">${i18n.t("hint.phrase")}</div></label>
+              <label class="modal-field"><span>${i18n.t("modal.keyfile")}</span><input type="file" id="pm-keyfile" class="term-input" /><div class="field-hint">${i18n.t("hint.keyfile")}</div></label>
               <div class="modal-actions">
                 <button id="pm-ok" type="submit" class="term-btn">${i18n.t("modal.ok")}</button>
                 <button id="pm-cancel" type="button" class="term-btn">${i18n.t("modal.cancel")}</button>

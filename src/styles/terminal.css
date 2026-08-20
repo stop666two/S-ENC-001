@@ -232,6 +232,14 @@ body.drag-over {
   line-height: 1.4;
 }
 
+.modal-body .field-hint {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  color: var(--dim);
+  line-height: 1.45;
+  user-select: none;
+}
+
 .modal-body label.modal-field > input[type="checkbox"] {
   justify-self: start;
 }

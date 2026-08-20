@@ -29,6 +29,10 @@ export class I18nManager {
       const key = el.getAttribute("data-i18n");
       if (key) el.textContent = this.t(key);
     });
+    document.querySelectorAll("[data-i18n-title]").forEach((el) => {
+      const key = el.getAttribute("data-i18n-title");
+      if (key) el.setAttribute("title", this.t(key));
+    });
     document.documentElement.lang = this.currentLang === "zh-CN" ? "zh-CN" : "en";
   }
 

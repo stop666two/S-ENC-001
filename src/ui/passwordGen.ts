@@ -11,16 +11,17 @@ export class PasswordGenerator {
       <div class="modal">
         <h3>${i18n.t("pg.title")}</h3>
         <div class="modal-body">
-          <label class="modal-field"><span>${i18n.t("pg.length")}</span><div class="pg-range-row"><input type="range" id="pg-length" min="8" max="64" value="15" /><span id="pg-length-val">15</span></div></label>
+          <label class="modal-field"><span>${i18n.t("pg.length")}</span><div class="pg-range-row"><input type="range" id="pg-length" min="8" max="64" value="15" /><span id="pg-length-val">15</span></div><div class="field-hint">${i18n.t("pg.hint.length")}</div></label>
           <label class="modal-field"><span>${i18n.t("pg.upper")}</span><input type="checkbox" id="pg-upper" checked /></label>
           <label class="modal-field"><span>${i18n.t("pg.lower")}</span><input type="checkbox" id="pg-lower" checked /></label>
           <label class="modal-field"><span>${i18n.t("pg.digits")}</span><input type="checkbox" id="pg-digits" checked /></label>
           <label class="modal-field"><span>${i18n.t("pg.symbols")}</span><input type="checkbox" id="pg-symbols" /></label>
-          <label class="modal-field"><span>${i18n.t("pg.exclude")}</span><input type="text" id="pg-exclude" class="term-input" value="0oOlLiI1" /></label>
+          <div class="field-hint">${i18n.t("pg.hint.charset")}</div>
+          <label class="modal-field"><span>${i18n.t("pg.exclude")}</span><input type="text" id="pg-exclude" class="term-input" value="0oOlLiI1" /><div class="field-hint">${i18n.t("pg.hint.exclude")}</div></label>
           <div id="pg-result" class="password-result"></div>
           <div class="modal-actions">
             <button id="pg-generate" class="term-btn">${i18n.t("pg.generate")}</button>
-            <button id="pg-use" class="term-btn">${i18n.t("pg.use")}</button>
+            <button id="pg-use" class="term-btn" title="${i18n.t("pg.hint.use")}">${i18n.t("pg.use")}</button>
             <button id="pg-close" class="term-btn">${i18n.t("pg.close")}</button>
           </div>
         </div>
