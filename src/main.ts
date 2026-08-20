@@ -77,7 +77,6 @@ class App {
       ,'    <button id="btn-hmac" class="term-btn" data-i18n="btn.hmac">[HMAC]</button>'
       ,'    <button id="btn-password" class="term-btn" data-i18n="btn.password">[password]</button>'
       ,'    <button id="btn-phrase" class="term-btn" data-i18n="btn.phrase">[phrase]</button>'
-      ,'    <button id="btn-text-enc" class="term-btn" data-i18n="btn.textenc">[text encrypt]</button>'
       ,'    <button id="btn-batch" class="term-btn" data-i18n="btn.batch">[batch]</button>'
       ,'    <button id="btn-clear" class="term-btn danger" data-i18n="btn.clear">[clear]</button>'
       ,'  </div>'
@@ -241,7 +240,6 @@ class App {
     document.getElementById("btn-hmac")!.onclick = () => void this.askHmac();
     document.getElementById("btn-password")!.onclick = () => this.passwordGen.show();
     document.getElementById("btn-phrase")!.onclick = () => void this.askPhrase();
-    document.getElementById("btn-text-enc")!.onclick = () => void this.askTextEncrypt();
     document.getElementById("btn-batch")!.onclick = () => void this.askBatch();
     document.getElementById("btn-clear")!.onclick = () => this.cmdClear();
     document.getElementById("btn-lang")!.onclick = () => {
@@ -290,7 +288,12 @@ class App {
       let filename: string;
       let fileListJson: string | undefined;
 
-      if (files.length === 1) {
+      if (opts.textContent !== undefined) {
+        const enc = new TextEncoder();
+        payload = enc.encode(opts.textContent).buffer as ArrayBuffer;
+        filename = "text.txt";
+        this.log(this.i18n.t("log.text.encrypt", { count: opts.textContent.length }));
+      } else if (files.length === 1) {
         payload = await files[0].arrayBuffer();
         filename = files[0].name;
         this.log(this.i18n.t("log.encrypting", { name: files[0].name, size: (files[0].size / 1024).toFixed(1) }));
@@ -318,7 +321,7 @@ class App {
       const est = await this.estimator.estimate(payload.byteLength, opts.compressLevel ?? 3, opts.mode ?? "auto", filename);
       this.log(this.i18n.t("log.estimate", { size: this.estimator.formatSize(est) }));
 
-      this.lastEncryptedName = (files.length === 1 ? files[0].name : "archive") + ".enc";
+      this.lastEncryptedName = (opts.textContent !== undefined ? "text" : (files.length === 1 ? files[0].name : "archive")) + ".enc";
       this._pendingSplitSize = opts.splitSize ?? 0;
       const options: Record<string, unknown> = {
         compressLevel: opts.compressLevel ?? 3,
@@ -474,32 +477,6 @@ class App {
       this.log(this.i18n.t("log.copied"));
     } catch (err) {
       this.log(this.i18n.t("log.phrase.fail", { err: String(err) }));
-    }
-  }
-  
-  private async askTextEncrypt(): Promise<void> {
-    const text = window.prompt(this.i18n.t("prompt.text.input"), "");
-    if (text === null || !text) { this.log(this.i18n.t("log.cancelled")); return; }
-    const opts = await PasswordModal.show({ titleKey: "modal.textenc.title", mode: "encrypt" });
-    if (!opts) { this.log(this.i18n.t("log.cancelled")); return; }
-    this.setBusy(true);
-    try {
-      const enc = new TextEncoder();
-      const payload = enc.encode(text).buffer as ArrayBuffer;
-      this.log(this.i18n.t("log.text.encrypt", { count: text.length }));
-      const options: Record<string, unknown> = {
-        compressLevel: opts.compressLevel ?? 3,
-        mode: opts.mode ?? "auto",
-        filename: "text.txt",
-        recoveryPhrase: opts.recoveryPhrase,
-      };
-      this.lastEncryptedName = "text.enc";
-      this._pendingSplitSize = opts.splitSize ?? 0;
-      this._lastOp = "encrypt";
-      this.worker.postMessage({ type: "encrypt", data: payload, password: opts.password, options });
-    } catch (err) {
-      this.log(this.i18n.t("log.encrypt.fail", { err: String(err) }));
-      this.setBusy(false);
     }
   }
   

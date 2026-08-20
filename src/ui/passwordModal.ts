@@ -7,6 +7,7 @@ export interface ModalResult {
   recoveryPhrase?: string;
   keyFile?: File;
   splitSize?: number;
+  textContent?: string;
 }
 
 export class PasswordModal {
@@ -30,8 +31,19 @@ export class PasswordModal {
 
       const splitRow =
         options.mode === "encrypt"
-          ? `<label class="modal-field"><span>${i18n.t("modal.split")}</span><input type="number" id="pm-split" class="term-input" min="0" max="1024" value="0" /></label>`
+          ? `<label class="modal-field"><span>${i18n.t("modal.split")}</span><input type="number" id="pm-split" class="term-input" min="0" max="65536" value="0" /></label>`
           : `<input type="hidden" id="pm-split" value="0" />`;
+
+      const contentRow =
+        options.mode === "encrypt"
+          ? `<label class="modal-field"><span>${i18n.t("modal.content")}</span>
+            <div class="modal-content-type">
+              <label><input type="radio" name="pm-ctype" value="files" checked /> ${i18n.t("modal.content.files")}</label>
+              <label><input type="radio" name="pm-ctype" value="text" /> ${i18n.t("modal.content.text")}</label>
+            </div>
+          </label>
+          <textarea id="pm-text" class="term-input" rows="4" style="display:none" placeholder="${i18n.t("modal.text.placeholder")}"></textarea>`
+          : "";
 
       overlay.innerHTML = `
         <div class="modal">
@@ -39,6 +51,7 @@ export class PasswordModal {
           <div class="modal-body">
             <label class="modal-field"><span>${i18n.t("modal.password")}</span><input type="password" id="pm-password" class="term-input" autocomplete="off" /></label>
             <label class="modal-field"><span>${i18n.t("modal.password2")}</span><input type="password" id="pm-password2" class="term-input" autocomplete="off" /></label>
+            ${contentRow}
             ${compressRow}
             ${splitRow}
             <label class="modal-field"><span>${i18n.t("modal.phrase")}</span><input type="text" id="pm-phrase" class="term-input" placeholder="${i18n.t("modal.phrase.placeholder")}" /></label>
@@ -56,12 +69,27 @@ export class PasswordModal {
       const pw2 = overlay.querySelector("#pm-password2") as HTMLInputElement;
       const phrase = overlay.querySelector("#pm-phrase") as HTMLInputElement;
       const keyFile = overlay.querySelector("#pm-keyfile") as HTMLInputElement;
+      const textArea = overlay.querySelector("#pm-text") as HTMLTextAreaElement | null;
+
+      overlay.querySelectorAll<HTMLInputElement>('input[name="pm-ctype"]').forEach((r) => {
+        r.onchange = () => {
+          const isText = r.value === "text" && r.checked;
+          if (textArea) {
+            textArea.style.display = isText ? "block" : "none";
+            if (isText) textArea.focus();
+          }
+        };
+      });
 
       const cleanup = () => { overlay.remove(); };
       (overlay.querySelector("#pm-cancel") as HTMLElement).onclick = () => { cleanup(); resolve(null); };
       (overlay.querySelector("#pm-ok") as HTMLElement).onclick = async () => {
         if (!pw.value) { pw.focus(); return; }
         if (pw.value !== pw2.value) { pw2.focus(); pw2.style.borderColor = "#f00"; return; }
+        const ctype = overlay.querySelector('input[name="pm-ctype"]:checked') as HTMLInputElement | null;
+        if (ctype?.value === "text") {
+          if (!textArea || !textArea.value.trim()) { textArea?.focus(); return; }
+        }
         const levelEl = overlay.querySelector("#pm-level") as HTMLSelectElement;
         const modeEl = overlay.querySelector("#pm-mode") as HTMLSelectElement;
         const splitEl = overlay.querySelector("#pm-split") as HTMLInputElement;
@@ -71,6 +99,7 @@ export class PasswordModal {
           mode: (modeEl?.value as "on" | "off" | "auto") ?? "auto",
           splitSize: splitEl ? Number(splitEl.value) : 0,
         };
+        if (ctype?.value === "text" && textArea) result.textContent = textArea.value;
         if (phrase.value.trim()) result.recoveryPhrase = phrase.value.trim();
         if (keyFile.files?.[0]) result.keyFile = keyFile.files[0];
         cleanup();

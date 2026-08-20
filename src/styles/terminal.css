@@ -236,6 +236,25 @@ body.drag-over {
   justify-self: start;
 }
 
+.modal-body .modal-content-type {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.modal-body .modal-content-type label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.modal-body textarea.term-input {
+  min-height: 96px;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
 .modal-body .pg-range-row {
   display: flex;
   align-items: center;
