@@ -8,6 +8,7 @@ import { PasswordGenerator } from "./ui/passwordGen";
 import { PasswordModal } from "./ui/passwordModal";
 import { ModeChoice } from "./ui/modeChoice";
 import { ConfirmModal } from "./ui/confirmModal";
+import { ResultModal, DecryptResultItem } from "./ui/resultModal";
 import { MainWorker, WorkerEvent } from "./worker/mainWorker";
 import { triggerDownload } from "./core/download";
 import { ClipboardManager } from "./core/clipboard";
@@ -175,37 +176,40 @@ class App {
       const header = JSON.parse(headerJson) as Record<string, unknown>;
       const originalName = (header.originalFilename as string) ?? "decrypted";
       const multiFile = header.multiFile as boolean;
+      const items: DecryptResultItem[] = [];
       if (multiFile) {
-        const files = (header.files as { name: string }[]) ?? [];
-        this.log(this.i18n.t("log.multifile", { count: files.length }));
         const meta = this._lastDecryptMetadata as Record<string, unknown> | undefined;
         const filesJson = meta?.filesJson as string | undefined;
         if (filesJson) {
           try {
             const entries = JSON.parse(filesJson) as { name: string; data_b64: string }[];
-            this.log(this.i18n.t("log.filelist"));
-            // Trigger individual downloads (no ZIP per design doc)
-            for (let i = 0; i < entries.length; i++) {
-              const f = entries[i];
+            this.log(this.i18n.t("log.multifile", { count: entries.length }));
+            for (const f of entries) {
               const bytes = base64ToBytes(f.data_b64);
-              this.log(this.i18n.t("log.file.entry", { i: i + 1, name: f.name, size: Math.round(bytes.length / 1024) }));
-              setTimeout(() => triggerDownload(bytes.buffer as ArrayBuffer, f.name), 200 * i);
+              items.push(ResultModal.detect(f.name, bytes.buffer as ArrayBuffer));
             }
-            this.log(this.i18n.t("log.files.downloaded", { count: entries.length }));
           } catch (err) {
             this.log(this.i18n.t("log.unpack.fail", { err: String(err) }));
-            triggerDownload(data, "decrypted.tar");
+            items.push(ResultModal.detect("decrypted.tar", data));
           }
         } else {
-          triggerDownload(data, "decrypted.tar");
+          items.push(ResultModal.detect("decrypted.tar", data));
         }
       } else {
-        triggerDownload(data, originalName);
+        items.push(ResultModal.detect(originalName, data));
         this.log(this.i18n.t("log.restored", { name: originalName, size: (data.byteLength / 1024).toFixed(1) }));
       }
       const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", data));
       const shaHex = this.bytesToHex(digest);
       this.log(this.i18n.t("log.sha", { hash: shaHex }));
+      const selected = await ResultModal.show(items);
+      this._lastDecryptMetadata = null;
+      if (!selected) return;
+      for (let i = 0; i < selected.length; i++) {
+        const item = items[selected[i]];
+        setTimeout(() => triggerDownload(item.data, item.name), 200 * i);
+      }
+      this.log(this.i18n.t("log.files.downloaded", { count: selected.length }));
     } catch (err) {
       this.log(this.i18n.t("log.decrypt.fail", { err: String(err) }));
     }
