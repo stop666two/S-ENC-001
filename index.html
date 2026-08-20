@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="S-ENC-001 - Pure frontend encryption/decryption tool" />
+  <meta name="theme-color" content="#000000" />
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="manifest" href="manifest.json" />
+  <title>S-ENC-001 SECURE TERMINAL</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+    }
+    body {
+      background: #000;
+      color: #0f0;
+    }
+    #app {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div style="display:flex;align-items:center;justify-content:center;height:100%;padding:2rem;box-sizing:border-box;">
+      <pre style="text-align:center;font-size:1rem;line-height:1.6;">
+&gt; Initializing S-ENC-001...
+&gt; Loading WASM crypto module...
+&gt; Please wait...
+      </pre>
+    </div>
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

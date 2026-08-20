@@ -1,0 +1,359 @@
+/* ===== Terminal Theme Variables ===== */
+:root,
+[data-theme="dark"] {
+  --bg: #000;
+  --text: #0f0;
+  --accent: #ff0;
+  --error: #f00;
+  --dim: #0a0;
+  --border: #0f0;
+  --btn-hover-bg: #0f0;
+  --btn-hover-text: #000;
+}
+
+[data-theme="light"] {
+  --bg: #fff;
+  --text: #000;
+  --accent: #00f;
+  --error: #c00;
+  --dim: #555;
+  --border: #000;
+  --btn-hover-bg: #000;
+  --btn-hover-text: #fff;
+}
+
+/* ===== Base ===== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 14px;
+  transition: background 0.2s, color 0.2s;
+}
+
+body.drag-over {
+  outline: 3px dashed var(--accent);
+  outline-offset: -3px;
+}
+
+/* ===== Layout ===== */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+#header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+#title {
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+#header-controls {
+  display: flex;
+  gap: 8px;
+}
+
+#main-area {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+#sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border-right: 1px solid var(--border);
+  width: 180px;
+  flex-shrink: 0;
+}
+
+#content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  overflow: hidden;
+}
+
+#terminal-output {
+  flex: 1;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  padding: 12px;
+  font-family: inherit;
+  background: var(--bg);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+#progress-area {
+  flex-shrink: 0;
+  padding: 8px 0;
+  color: var(--accent);
+}
+
+#status-bar {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 16px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--dim);
+  flex-shrink: 0;
+}
+
+/* ===== Terminal Lines ===== */
+.term-line {
+  line-height: 1.6;
+  margin: 0;
+}
+
+.term-line.error {
+  color: var(--error);
+}
+
+.term-line.info {
+  color: var(--dim);
+}
+
+/* ===== Buttons ===== */
+.term-btn {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 8px 16px;
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  text-align: left;
+  text-transform: none;
+  transition: background 0.15s, color 0.15s;
+}
+
+.term-btn:hover {
+  background: var(--btn-hover-bg);
+  color: var(--btn-hover-text);
+}
+
+.term-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.term-btn.danger {
+  color: var(--error);
+  border-color: var(--error);
+}
+
+.term-btn.danger:hover {
+  background: var(--error);
+  color: #fff;
+}
+
+.term-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ===== Modal ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+[data-theme="light"] .modal-overlay {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.modal {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 24px;
+  max-width: 480px;
+  width: 90%;
+}
+
+.modal h3 {
+  margin-bottom: 16px;
+  color: var(--accent);
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-body label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.modal-body input[type="text"],
+.modal-body input[type="password"] {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  padding: 6px 8px;
+  width: 100%;
+}
+
+.password-result {
+  border: 1px dashed var(--accent);
+  padding: 12px;
+  font-size: 16px;
+  word-break: break-all;
+  min-height: 42px;
+}
+
+/* ===== Inputs ===== */
+input[type="range"] {
+  accent-color: var(--text);
+}
+
+input[type="checkbox"] {
+  accent-color: var(--text);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  #main-area {
+    flex-direction: column;
+  }
+
+  #sidebar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 8px;
+  }
+
+  #sidebar .term-btn {
+    flex: 1;
+    min-width: 80px;
+    text-align: center;
+    padding: 10px 8px;
+    font-size: 13px;
+  }
+
+  #content {
+    padding: 8px;
+  }
+
+  #header {
+    padding: 6px 8px;
+  }
+
+  .modal {
+    width: 95%;
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    font-size: 13px;
+  }
+
+  #title {
+    font-size: 12px;
+  }
+
+  #status-bar {
+    font-size: 10px;
+  }
+}
+
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--dim);
+  border: 1px solid var(--bg);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text);
+}
+
+/* ===== Accessibility ===== */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
+
+:focus {
+  outline: 2px solid var(--accent);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+/* ===== Modal Inputs ===== */
+.term-input {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  padding: 6px 8px;
+  width: 100%;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}

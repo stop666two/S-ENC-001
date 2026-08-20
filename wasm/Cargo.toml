@@ -1,0 +1,33 @@
+[package]
+name = "s-enc-core"
+version = "1.0.0"
+edition = "2021"
+description = "S-ENC-001 core WASM module - encryption, decryption, hashing"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+js-sys = "0.3"
+getrandom = { version = "0.2", features = ["js"] }
+aes-gcm = "0.10"
+argon2 = "0.5"
+hkdf = "0.12"
+sha2 = "0.10"
+hmac = "0.12"
+zstd = { version = "0.13", features = ["no_asm"] }
+rand = "0.8"
+zeroize = { version = "1", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+base64 = "0.22"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
