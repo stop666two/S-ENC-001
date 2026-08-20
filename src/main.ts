@@ -355,7 +355,7 @@ class App {
       try {
         // Merge .part files if multiple selected
         let data: ArrayBuffer;
-        if (files.length > 1 && files.every((f) => f.name.endsWith(".part"))) {
+        if (files.length > 1 && files.every((f) => /\.part\d+$/.test(f.name))) {
           this.log(this.i18n.t("log.merge", { count: files.length }));
           const sorted = [...files].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
           const parts = await Promise.all(sorted.map((f) => f.arrayBuffer()));
@@ -372,8 +372,15 @@ class App {
           data = await files[0].arrayBuffer();
         }
         this.log(this.i18n.t("log.decrypting"));
+        let keyFileHash: Uint8Array | undefined;
+        if (opts.keyFile) {
+          const buf = await opts.keyFile.arrayBuffer();
+          const digest = await crypto.subtle.digest("SHA-256", buf);
+          keyFileHash = new Uint8Array(digest);
+          this.log(this.i18n.t("log.keyfile.loaded"));
+        }
         const options: Record<string, unknown> = {
-          keyFileHash: undefined,
+          keyFileHash,
           recoveryPhrase: opts.recoveryPhrase,
         };
         this._lastOp = "decrypt";
