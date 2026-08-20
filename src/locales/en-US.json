@@ -81,7 +81,7 @@
   "modal.mode.auto": "auto",
   "modal.mode.on": "on",
   "modal.mode.off": "off",
-  "modal.split": "Split size (MB, 0=none):",
+  "modal.split": "Split size (MB, 0=none, max 4095):",
   "modal.content": "Content:",
   "modal.content.files": "Selected files",
   "modal.content.text": "Enter text",

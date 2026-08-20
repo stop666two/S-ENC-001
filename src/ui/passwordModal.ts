@@ -31,7 +31,7 @@ export class PasswordModal {
 
       const splitRow =
         options.mode === "encrypt"
-          ? `<label class="modal-field"><span>${i18n.t("modal.split")}</span><input type="number" id="pm-split" class="term-input" min="0" max="65536" value="0" /></label>`
+          ? `<label class="modal-field"><span>${i18n.t("modal.split")}</span><input type="number" id="pm-split" class="term-input" min="0" max="4095" value="0" /></label>`
           : `<input type="hidden" id="pm-split" value="0" />`;
 
       const contentRow =

@@ -81,7 +81,7 @@
   "modal.mode.auto": "自动",
   "modal.mode.on": "开启",
   "modal.mode.off": "关闭",
-  "modal.split": "分割大小 (MB, 0=不分割):",
+  "modal.split": "分割大小 (MB, 0=不分割, 上限 4095):",
   "modal.content": "加密内容:",
   "modal.content.files": "所选文件",
   "modal.content.text": "输入文本",

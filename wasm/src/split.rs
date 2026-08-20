@@ -2,6 +2,13 @@ pub fn split_file(data: &[u8], chunk_size: u64) -> Result<Vec<Vec<u8>>, String> 
     if chunk_size == 0 {
         return Err("chunk_size must be > 0".to_string());
     }
+    if chunk_size > usize::MAX as u64 {
+        return Err(format!(
+            "chunk_size {} exceeds platform maximum {} bytes",
+            chunk_size,
+            usize::MAX
+        ));
+    }
     let cs = chunk_size as usize;
     let mut chunks = Vec::new();
     for chunk in data.chunks(cs) {
@@ -64,5 +71,11 @@ mod tests {
     #[test]
     fn test_zero_chunk_size_rejected() {
         assert!(split_file(b"x", 0).is_err());
+    }
+
+    #[cfg(target_pointer_width = "32")]
+    #[test]
+    fn test_chunk_size_overflow_rejected() {
+        assert!(split_file(b"x", 1u64 << 32).is_err());
     }
 }
