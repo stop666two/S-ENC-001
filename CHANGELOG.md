@@ -3,6 +3,54 @@
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范。
 版本号格式：语义化版本 [SemVer](https://semver.org/lang/zh-CN/)。
 
+## [1.3.0] - 2026-08-20
+
+### Added
+- **解密结果自定义弹窗**：解密完成不再直接下载——文本显示前 100 字符预览与提示、二进制按 magic bytes 识别格式（PNG/JPEG/GIF/WebP/PDF/ZIP/GZIP/7z/RAR/zstd）不预览、多文件包显示文件列表（全选/逐项勾选/下载所选），保留 200ms 间隔下载防浏览器拦截
+- **加密表单增强**：密码强度实时指示（熵估算 弱/中/强）、密码可见性切换、二次确认（encrypt 模式）、压缩级别/模式/分割大小偏好记忆（localStorage `s-enc-level/mode/split`）
+- **解密预览复制全文**：文本预览「复制全文」按钮（>8MB 隐藏），预览解码 UTF-8 → GB18030 三级回退
+- **恢复短语弹窗**：生成后展示可全选短语框 + 复制/关闭按钮（不再自动复制到剪贴板）
+- **压缩率统计日志**：加密完成输出压缩率/膨胀率（原大小 → 密文大小）
+- **文件夹递归拖入**：拖入文件夹自动递归收集全部文件打包加密
+- **界面功能说明**：全部 modal 字段小字说明（field-hint）+ 按钮悬停 tooltip（data-i18n-title）
+- **快捷键**：Ctrl+E 加密 / Ctrl+D 解密（弹窗打开或处理中时忽略）
+- **主题三态**：自动（跟随系统 prefers-color-scheme）/ 浅色 / 深色，localStorage `s-enc-theme` 兼容旧值
+- **拖入 .enc 自动解密**：拖入 .enc / .partNN 文件直接进入解密流程
+- **WASM 单例缓存**：loadWasm 幂等，重复调用不重复加载
+- **密码生成器入口**：加密弹窗内嵌 [生成] 按钮，生成后一键回填双密码框
+- **Modal 无障碍**：全部弹窗 role=dialog + aria-modal + aria-labelledby + Tab 焦点陷阱循环
+
+### Changed
+- **UI 精简重构**：删除哈希 / HMAC 校验 / 批量任务三个按钮；[加密] 改为两步式（先选 文件加密 / 文本加密）；主界面仅保留 加密/解密/密码生成/恢复短语/一键清除 + 语言/主题
+- **错误密码真静默**：10 秒静默延迟保留（防时序攻击），但删除「密码错误将静默等待 10 秒」提示与「验证中」日志，解密失败状态立即恢复就绪
+- **压缩级别扩展**：1/3/5/9/19（默认 5），原 1–9 默认 3；Rust 侧 clamp 上限 1–19
+- **文本加密文件名**：`text.txt` → `text.enc`，与解密恢复名一致
+- **原生 confirm 自定义化**：恢复短语词数三选弹窗、一键清除确认弹窗（危险样式）
+- **依赖版本锁定**：typescript 5.9.3、vite 6.4.3（package.json 去范围符）；wasm crate 14 项依赖全部锁定（wasm/Cargo.toml 去范围符）
+- **分割大小上限**：1024 → 4095 MB/片（wasm32 指针宽度安全上限）
+
+### Fixed
+- **.part 分片合并识别**：原 `endsWith(.part)` 判断对 `base.partNN` 恒 false，改 `[.]part` + 数字 正则
+- **密钥文件加密文件无法解密**：解密侧未读取 keyFile 计算 keyFileHash，现与加密侧一致（SHA-256）
+- **终端内存泄漏**：日志 DOM 环形缓冲 500 行上限未生效（只截断数组不删节点），现超出即移除首节点
+- **worker 进度事件死代码**：加密/解密前后发送 progress 事件，删除无调用方的 fileStream.ts 与 triggerMultipleDownloads
+- **Service Worker 缺失**：vite 无 SW 配置致 `/sw.js` 404，新增 scripts/build-sw.mjs（esbuild）构建 IIFE SW，缓存策略 navigation 与 /wasm/ 路径 network-first
+- **解密日志 SHA-256 错误**：曾把整个解密文件 hex 化当摘要，现用 crypto.subtle.digest 计算真实 64 位 hex
+- **base64 解码内存峰值**：单遍解码替代双重 atob + Uint8Array.from 迭代器
+- **10 秒竞态误报**：旧定时器未取消，解密失败后 10 秒内再次解密成功仍误报「密码错误」；现由 `_errorTimer` 管理，新操作开始即清除
+- **wasm32 分割截断**：chunk_size 在 32 位指针下溢出，超上限显式报错
+- **tar 头 NUL 字节**：7 处真实 NUL 字节转义为 `\0`（字节输出语义等价）
+- **静态服务器路径守卫**：`startsWith(ROOT)` 缺分隔符（ROOT=/foo 可匹配 /foobar），现校验分隔符并拦截编码穿越
+- **密码生成器排除字符静默截断**：非 ASCII 排除字符显式报错
+- **密文块边界**：允许 0 字节明文 tag-only 块（`< TAG_SIZE` 而非 `<=`）
+- **加密密钥残留**：enc/hmac 派生密钥使用后 zeroize 清零
+
+### Security
+- 派生密钥用后清零（zeroize），减少内存残留窗口
+- 排除字符 ASCII 校验，拒绝静默截断
+- 静态服务器路径穿越防护（`..` 与 `%2e%2e` 编码）
+- 统一错误文案，不泄露解密失败具体原因
+
 ## [1.2.3] - 2026-08-20
 
 ### Added
