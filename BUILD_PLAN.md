@@ -53,6 +53,6 @@ npm run dev
 - **解密结果交互**：自定义结果弹窗（文本前 100 字符预览 / 二进制格式提示 / 多选下载列表）
 - **错误密码**：10 秒静默延迟保留（防时序攻击），无提示无日志
 - **主题**：三态（自动 / 浅色 / 深色），localStorage `s-enc-theme`
-- **版本**：1.3.0（CHANGELOG 与 package.json 同步）
+- **版本**：1.0.0（CHANGELOG 与 package.json 同步）
 - 完整变更见 CHANGELOG.md
 

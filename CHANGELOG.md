@@ -3,7 +3,7 @@
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范。
 版本号格式：语义化版本 [SemVer](https://semver.org/lang/zh-CN/)。
 
-## [1.3.0] - 2026-08-20
+## [Unreleased]
 
 ### Added
 - **解密结果自定义弹窗**：解密完成不再直接下载——文本显示前 100 字符预览与提示、二进制按 magic bytes 识别格式（PNG/JPEG/GIF/WebP/PDF/ZIP/GZIP/7z/RAR/zstd）不预览、多文件包显示文件列表（全选/逐项勾选/下载所选），保留 200ms 间隔下载防浏览器拦截
