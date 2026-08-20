@@ -12,9 +12,17 @@ import { ClipboardManager } from "./core/clipboard";
 import { SizeEstimator } from "./core/estimate";
 import type * as WasmTypes from "./wasm-pkg/s_enc_core.js";
 
+// Single-pass base64 -> bytes (avoids Uint8Array.from iterator + duplicate atob)
+function base64ToBytes(b64: string): Uint8Array {
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
 // Dynamic wasm loader from public dir
 async function loadWasm(): Promise<typeof WasmTypes> {
-  const mod = await (eval('import("/wasm/s_enc_core.js")') as Promise<typeof WasmTypes>);
+  const mod = await (import(/* @vite-ignore */ "/wasm/s_enc_core.js") as Promise<typeof WasmTypes>);
   await mod.default();
   return mod;
 }
@@ -185,11 +193,12 @@ class App {
           try {
             const entries = JSON.parse(filesJson) as { name: string; data_b64: string }[];
             this.log(this.i18n.t("log.filelist"));
-            entries.forEach((f, i) => this.log(this.i18n.t("log.file.entry", { i: i + 1, name: f.name, size: Math.round(atob(f.data_b64).length / 1024) })));
             // Trigger individual downloads (no ZIP per design doc)
-            for (const f of entries) {
-              const bytes = Uint8Array.from(atob(f.data_b64), (c) => c.charCodeAt(0));
-              setTimeout(() => triggerDownload(bytes.buffer as ArrayBuffer, f.name), 200 * entries.indexOf(f));
+            for (let i = 0; i < entries.length; i++) {
+              const f = entries[i];
+              const bytes = base64ToBytes(f.data_b64);
+              this.log(this.i18n.t("log.file.entry", { i: i + 1, name: f.name, size: Math.round(bytes.length / 1024) }));
+              setTimeout(() => triggerDownload(bytes.buffer as ArrayBuffer, f.name), 200 * i);
             }
             this.log(this.i18n.t("log.files.downloaded", { count: entries.length }));
           } catch (err) {
@@ -204,7 +213,7 @@ class App {
         this.log(this.i18n.t("log.restored", { name: originalName, size: (data.byteLength / 1024).toFixed(1) }));
       }
       const shaHex = this.bytesToHex(new Uint8Array(data));
-      this.log(this.i18n.t("log.sha", { hash: shaHex.slice(0, 32) }));
+      this.log(this.i18n.t("log.sha", { hash: shaHex }));
     } catch (err) {
       this.log(this.i18n.t("log.decrypt.fail", { err: String(err) }));
     }
