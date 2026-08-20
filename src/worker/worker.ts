@@ -27,7 +27,7 @@ self.onmessage = async (e: MessageEvent<WorkerCommand>) => {
       case "encrypt": {
         const { data, password, options } = cmd;
         const {
-          compressLevel = 3,
+          compressLevel = 5,
           mode = "auto",
           filename = "data",
           keyFileHash,

@@ -99,7 +99,7 @@ fn encrypt_inner(
         "auto" => !compress::is_already_compressed(filename),
         other => return Err(format!("Unknown compression mode: {other}")),
     };
-    let level = compress_level.max(1).min(9);
+    let level = compress_level.max(1).min(19);
 
     let payload: Vec<u8> = if use_compression {
         compress::compress(data, level as i32)?

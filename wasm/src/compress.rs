@@ -1,7 +1,7 @@
 use std::io::{Read, Write};
 
 /// Compress data using zstd.
-/// level: 1-9 (default 3)
+/// level: 1-19 (default 5)
 pub fn compress(data: &[u8], level: i32) -> Result<Vec<u8>, String> {
     let clamped = level.clamp(1, 9);
     let mut encoder = zstd::stream::Encoder::new(Vec::new(), clamped)

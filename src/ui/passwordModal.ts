@@ -16,8 +16,8 @@ export class PasswordModal {
       const overlay = document.createElement("div");
       overlay.className = "modal-overlay";
 
-      const levelOptions = [1, 3, 5, 9]
-        .map((n) => `<option value="${n}"${n === 3 ? " selected" : ""}>${i18n.t("modal.level.opt." + n)}</option>`)
+      const levelOptions = [1, 3, 5, 9, 19]
+        .map((n) => `<option value="${n}"${n === 5 ? " selected" : ""}>${i18n.t("modal.level.opt." + n)}</option>`)
         .join("");
       const modeOptions = ["auto", "on", "off"]
         .map((m) => `<option value="${m}"${m === "auto" ? " selected" : ""}>${i18n.t("modal.mode." + m)}</option>`)
