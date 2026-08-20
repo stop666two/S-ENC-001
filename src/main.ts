@@ -1,7 +1,7 @@
 import "./styles/terminal.css";
 import { Terminal } from "./ui/terminal";
 import { ThemeManager } from "./ui/theme";
-import { I18nManager } from "./ui/i18n";
+import { i18n } from "./ui/i18n";
 import { DragDrop } from "./ui/dragDrop";
 import { ProgressBar } from "./ui/progress";
 import { PasswordGenerator } from "./ui/passwordGen";
@@ -22,7 +22,7 @@ async function loadWasm(): Promise<typeof WasmTypes> {
 class App {
   private terminal: Terminal;
   private theme: ThemeManager;
-  private i18n: I18nManager;
+  private i18n = i18n;
   private progress: ProgressBar;
   private passwordGen: PasswordGenerator;
   private worker: MainWorker;
@@ -40,7 +40,6 @@ class App {
 
     this.terminal = new Terminal(document.getElementById("terminal-output")!);
     this.theme = new ThemeManager();
-    this.i18n = new I18nManager();
     this.i18n.load();
     this.progress = new ProgressBar(document.getElementById("progress-area")!);
     this.passwordGen = new PasswordGenerator();
@@ -53,9 +52,9 @@ class App {
 
     this.i18n.apply();
 
-    this.log("> S-ENC-001 SECURE TERMINAL initialized");
-    this.log("[提示] 系统就绪 - 完全离线模式");
-    this.log("> 拖拽文件到窗口或点击按钮开始");
+    this.log(this.i18n.t("log.init"));
+    this.log(this.i18n.t("log.ready"));
+    this.log(this.i18n.t("log.drag"));
 
     new DragDrop((files) => { void this.handleDrop(files); });
     this.bindEvents();
@@ -112,17 +111,17 @@ class App {
       // (prevents timing attacks; matches design doc section 3.5)
       const isDecryptError = this._lastOp === "decrypt";
       if (isDecryptError) {
-        this.log("[...] 验证中...");
+        this.log(this.i18n.t("log.verifying"));
         const input = document.querySelector("#pm-password") as HTMLInputElement | null;
         if (input) input.disabled = true;
         setTimeout(() => {
-          this.log("[错误] 密码错误或文件已损坏");
+          this.log(this.i18n.t("error.wrong.password"));
           if (input) input.disabled = false;
           this.progress.clear();
           this.setBusy(false);
         }, 10000);
       } else {
-        this.log(`[错误] ${e.message}`);
+        this.log(this.i18n.t("log.error.generic", { err: e.message }));
         this.progress.clear();
         this.setBusy(false);
       }
@@ -152,24 +151,24 @@ class App {
         const chunkSize = BigInt(Math.round(splitMB * 1024 * 1024));
         const chunks = wasm.split_file(new Uint8Array(data), chunkSize);
         const base = outName.replace(/\.enc$/, "");
-        this.log(`> 分割为 ${chunks.length} 个分片 (${splitMB} MB/片)...`);
+        this.log(this.i18n.t("log.split.parts", { count: chunks.length, mb: splitMB }));
         const pad = String(chunks.length).length;
         for (let i = 0; i < chunks.length; i++) {
           const partName = `${base}.part${String(i + 1).padStart(pad, "0")}`;
           const bytes = chunks[i] as Uint8Array;
           setTimeout(() => triggerDownload(bytes.buffer as ArrayBuffer, partName), 300 * i);
         }
-        this.log(`> 已触发 ${chunks.length} 个 .part 分片下载 (总 ${(data.byteLength / 1024).toFixed(1)} KB)`);
-        this.log("[提示] 解密时选择全部 .part 文件即可自动合并");
+        this.log(this.i18n.t("log.split.done", { count: chunks.length, size: (data.byteLength / 1024).toFixed(1) }));
+        this.log(this.i18n.t("log.split.hint"));
       } catch (err) {
-        this.log(`[错误] 分割失败，下载完整文件: ${String(err)}`);
+        this.log(this.i18n.t("log.split.fail", { err: String(err) }));
         triggerDownload(data, outName);
       }
     } else {
       triggerDownload(data, outName);
-      this.log(`> 已生成加密文件: ${outName} (${(data.byteLength / 1024).toFixed(1)} KB)`);
+      this.log(this.i18n.t("log.generated", { name: outName, size: (data.byteLength / 1024).toFixed(1) }));
     }
-    this.log("[提示] 加密完成。原始文件可能仍残留于磁盘，建议安全擦除。");
+    this.log(this.i18n.t("log.encrypt.hint"));
     void this.clipboard.clearClipboard();
   }
 
@@ -180,22 +179,22 @@ class App {
       const multiFile = header.multiFile as boolean;
       if (multiFile) {
         const files = (header.files as { name: string }[]) ?? [];
-        this.log(`> 检测到多文件包 (${files.length} 个文件)`);
+        this.log(this.i18n.t("log.multifile", { count: files.length }));
         const meta = this._lastDecryptMetadata as Record<string, unknown> | undefined;
         const filesJson = meta?.filesJson as string | undefined;
         if (filesJson) {
           try {
             const entries = JSON.parse(filesJson) as { name: string; data_b64: string }[];
-            this.log("> 文件列表:");
-            entries.forEach((f, i) => this.log(`  [${i + 1}] ${f.name} (${Math.round(atob(f.data_b64).length / 1024)} KB)`));
+            this.log(this.i18n.t("log.filelist"));
+            entries.forEach((f, i) => this.log(this.i18n.t("log.file.entry", { i: i + 1, name: f.name, size: Math.round(atob(f.data_b64).length / 1024) })));
             // Trigger individual downloads (no ZIP per design doc)
             for (const f of entries) {
               const bytes = Uint8Array.from(atob(f.data_b64), (c) => c.charCodeAt(0));
               setTimeout(() => triggerDownload(bytes.buffer as ArrayBuffer, f.name), 200 * entries.indexOf(f));
             }
-            this.log(`> 已触发 ${entries.length} 个文件下载`);
+            this.log(this.i18n.t("log.files.downloaded", { count: entries.length }));
           } catch (err) {
-            this.log(`[错误] 解包失败: ${String(err)}`);
+            this.log(this.i18n.t("log.unpack.fail", { err: String(err) }));
             triggerDownload(data, "decrypted.tar");
           }
         } else {
@@ -203,12 +202,12 @@ class App {
         }
       } else {
         triggerDownload(data, originalName);
-        this.log(`> 已恢复文件: ${originalName} (${(data.byteLength / 1024).toFixed(1)} KB)`);
+        this.log(this.i18n.t("log.restored", { name: originalName, size: (data.byteLength / 1024).toFixed(1) }));
       }
       const shaHex = this.bytesToHex(new Uint8Array(data));
-      this.log(`> SHA-256: ${shaHex.slice(0, 32)}... (完整哈希见哈希工具)`);
+      this.log(this.i18n.t("log.sha", { hash: shaHex.slice(0, 32) }));
     } catch (err) {
-      this.log(`[错误] 解密结果处理失败: ${String(err)}`);
+      this.log(this.i18n.t("log.decrypt.fail", { err: String(err) }));
     }
   }
 
@@ -216,15 +215,15 @@ class App {
     const hex = this.bytesToHex(new Uint8Array(data));
     this.log(`> ${algorithm.toUpperCase()}: ${hex}`);
     void this.clipboard.copy(hex);
-    this.log("[提示] 哈希已复制到剪贴板");
+    this.log(this.i18n.t("log.hash.copy"));
     // Expected hash comparison
-    const expected = window.prompt("输入期望哈希进行比对 (留空跳过):", "");
+    const expected = window.prompt(this.i18n.t("prompt.hash.compare"), "");
     if (expected && expected.trim()) {
       const clean = expected.trim().toLowerCase();
       if (clean === hex.toLowerCase()) {
-        this.log("[提示] MATCH - 哈希一致 ✓");
+        this.log(this.i18n.t("log.match"));
       } else {
-        this.log("[错误] MISMATCH - 哈希不一致 ✗");
+        this.log(this.i18n.t("log.mismatch"));
       }
     }
   }
@@ -252,8 +251,8 @@ class App {
   }
 
   private async handleDrop(files: File[]): Promise<void> {
-    this.log(`> 接收到 ${files.length} 个文件`);
-    for (const f of files) this.log(`  > ${f.name} (${(f.size / 1024).toFixed(1)} KB)`);
+    this.log(this.i18n.t("log.received", { count: files.length }));
+    for (const f of files) this.log(this.i18n.t("log.select", { name: f.name, size: (f.size / 1024).toFixed(1) }));
     if (this.busy) return;
     await this.runEncrypt(files);
   }
@@ -265,15 +264,15 @@ class App {
     input.onchange = async () => {
       const files = Array.from(input.files ?? []);
       if (!files.length) return;
-      for (const f of files) this.log(`> 选择: ${f.name} (${(f.size / 1024).toFixed(1)} KB)`);
+      for (const f of files) this.log(this.i18n.t("log.select", { name: f.name, size: (f.size / 1024).toFixed(1) }));
       await this.runEncrypt(files);
     };
     input.click();
   }
 
   private async runEncrypt(files: File[]): Promise<void> {
-    const opts = await PasswordModal.show({ title: "[加密] 输入密码", mode: "encrypt", multi: files.length > 1 });
-    if (!opts) { this.log("[提示] 已取消"); return; }
+    const opts = await PasswordModal.show({ titleKey: "modal.encrypt.title", mode: "encrypt" });
+    if (!opts) { this.log(this.i18n.t("log.cancelled")); return; }
 
     this.setBusy(true);
     try {
@@ -283,7 +282,7 @@ class App {
         const buf = await opts.keyFile.arrayBuffer();
         const digest = await crypto.subtle.digest("SHA-256", buf);
         keyFileHash = new Uint8Array(digest);
-        this.log("[提示] 密钥文件已加载 (SHA-256 哈希作为第二因素)");
+        this.log(this.i18n.t("log.keyfile.loaded"));
       }
 
       // Multi-file: pack into tar via WASM first
@@ -294,9 +293,9 @@ class App {
       if (files.length === 1) {
         payload = await files[0].arrayBuffer();
         filename = files[0].name;
-        this.log(`> 加密中: ${files[0].name} (${(files[0].size / 1024).toFixed(1)} KB)`);
+        this.log(this.i18n.t("log.encrypting", { name: files[0].name, size: (files[0].size / 1024).toFixed(1) }));
       } else {
-        this.log(`> 打包 ${files.length} 个文件为 tar 归档...`);
+        this.log(this.i18n.t("log.packing", { count: files.length }));
         const entries: { name: string; data_b64: string }[] = [];
         for (const f of files) {
           const buf = new Uint8Array(await f.arrayBuffer());
@@ -313,11 +312,11 @@ class App {
         payload = tarBytes.buffer as ArrayBuffer;
         filename = "archive.tar";
         fileListJson = JSON.stringify(files.map((f) => ({ name: f.name, size: f.size, sha256: "" })));
-        this.log(`> tar 归档完成 (${(payload.byteLength / 1024).toFixed(1)} KB)`);
+        this.log(this.i18n.t("log.tar.done", { size: (payload.byteLength / 1024).toFixed(1) }));
       }
 
       const est = await this.estimator.estimate(payload.byteLength, opts.compressLevel ?? 3, opts.mode ?? "auto", filename);
-      this.log(`> 预估加密后大小: ${this.estimator.formatSize(est)}`);
+      this.log(this.i18n.t("log.estimate", { size: this.estimator.formatSize(est) }));
 
       this.lastEncryptedName = (files.length === 1 ? files[0].name : "archive") + ".enc";
       this._pendingSplitSize = opts.splitSize ?? 0;
@@ -332,7 +331,7 @@ class App {
       this._lastOp = "encrypt";
       this.worker.postMessage({ type: "encrypt", data: payload, password: opts.password, options });
     } catch (err) {
-      this.log(`[错误] 加密失败: ${String(err)}`);
+      this.log(this.i18n.t("log.encrypt.fail", { err: String(err) }));
       this.setBusy(false);
     }
   }
@@ -345,16 +344,16 @@ class App {
     input.onchange = async () => {
       const files = Array.from(input.files ?? []);
       if (!files.length) return;
-      for (const f of files) this.log(`> 选择: ${f.name} (${(f.size / 1024).toFixed(1)} KB)`);
-      const opts = await PasswordModal.show({ title: "[解密] 输入密码", mode: "decrypt" });
-      if (!opts) { this.log("[提示] 已取消"); return; }
+      for (const f of files) this.log(this.i18n.t("log.select", { name: f.name, size: (f.size / 1024).toFixed(1) }));
+      const opts = await PasswordModal.show({ titleKey: "modal.decrypt.title", mode: "decrypt" });
+      if (!opts) { this.log(this.i18n.t("log.cancelled")); return; }
 
       this.setBusy(true);
       try {
         // Merge .part files if multiple selected
         let data: ArrayBuffer;
         if (files.length > 1 && files.every((f) => f.name.endsWith(".part"))) {
-          this.log(`> 合并 ${files.length} 个分片...`);
+          this.log(this.i18n.t("log.merge", { count: files.length }));
           const sorted = [...files].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
           const parts = await Promise.all(sorted.map((f) => f.arrayBuffer()));
           const total = parts.reduce((s, p) => s + p.byteLength, 0);
@@ -365,11 +364,11 @@ class App {
             off += p.byteLength;
           }
           data = merged.buffer as ArrayBuffer;
-          this.log("> 分片合并完成");
+          this.log(this.i18n.t("log.merged"));
         } else {
           data = await files[0].arrayBuffer();
         }
-        this.log("> 解密中... (密码错误将静默等待 10 秒)");
+        this.log(this.i18n.t("log.decrypting"));
         const options: Record<string, unknown> = {
           keyFileHash: undefined,
           recoveryPhrase: opts.recoveryPhrase,
@@ -377,7 +376,7 @@ class App {
         this._lastOp = "decrypt";
         this.worker.postMessage({ type: "decrypt", data, password: opts.password, options });
       } catch (err) {
-        this.log(`[错误] 解密失败: ${String(err)}`);
+        this.log(this.i18n.t("log.decrypt.fail", { err: String(err) }));
         this.setBusy(false);
       }
     };
@@ -390,8 +389,8 @@ class App {
     input.onchange = async () => {
       const file = input.files?.[0];
       if (!file) return;
-      const algo = window.prompt("算法 (sha256 / sha512):", "sha256") === "sha512" ? "sha512" : "sha256";
-      this.log(`> 计算 ${algo.toUpperCase()}: ${file.name}`);
+      const algo = window.prompt(this.i18n.t("prompt.hash.algorithm"), "sha256") === "sha512" ? "sha512" : "sha256";
+      this.log(this.i18n.t("log.hash.compute", { algo: algo.toUpperCase(), name: file.name }));
       this.setBusy(true);
       const buf = await file.arrayBuffer();
       this._lastOp = "hash";
@@ -401,11 +400,11 @@ class App {
   }
 
   private async askHmac(): Promise<void> {
-    const key = prompt("输入 HMAC 密钥:");
+    const key = prompt(this.i18n.t("prompt.hmac.key"));
     if (!key) return;
-    const data = prompt("输入数据:");
+    const data = prompt(this.i18n.t("prompt.hmac.data"));
     if (!data) return;
-    this.log("> 计算 HMAC-SHA256...");
+    this.log(this.i18n.t("log.hmac.compute"));
     this.setBusy(true);
     try {
       const wasm = await loadWasm();
@@ -414,10 +413,10 @@ class App {
       const hex = this.bytesToHex(result);
       this.log(`> HMAC-SHA256: ${hex}`);
       await this.clipboard.copy(hex);
-      this.log("[提示] HMAC 已复制到剪贴板");
+      this.log(this.i18n.t("log.hmac.copy"));
       this.setBusy(false);
     } catch (err) {
-      this.log(`[错误] HMAC 失败: ${String(err)}`);
+      this.log(this.i18n.t("log.hmac.fail", { err: String(err) }));
       this.setBusy(false);
     }
   }
@@ -429,15 +428,15 @@ class App {
     input.onchange = async () => {
       const files = Array.from(input.files ?? []);
       if (!files.length) return;
-      this.log(`> 批量任务: ${files.length} 个文件 (分别加密)`);
-      const opts = await PasswordModal.show({ title: "[批量加密] 输入密码", mode: "encrypt" });
-      if (!opts) { this.log("[提示] 已取消"); return; }
+      this.log(this.i18n.t("log.batch.task", { count: files.length }));
+      const opts = await PasswordModal.show({ titleKey: "modal.batch.title", mode: "encrypt" });
+      if (!opts) { this.log(this.i18n.t("log.cancelled")); return; }
       this.setBusy(true);
       try {
         for (let i = 0; i < files.length; i++) {
           const f = files[i];
           const buf = await f.arrayBuffer();
-          this.log(`> [${i + 1}/${files.length}] 加密: ${f.name}`);
+          this.log(this.i18n.t("log.batch.encrypt", { i: i + 1, total: files.length, name: f.name }));
           this.lastEncryptedName = f.name + ".enc";
           this._pendingSplitSize = opts.splitSize ?? 0;
           this._lastOp = "encrypt";
@@ -456,7 +455,7 @@ class App {
           await new Promise((r) => setTimeout(r, 300));
         }
       } catch (err) {
-        this.log(`[错误] 批量加密失败: ${String(err)}`);
+        this.log(this.i18n.t("log.batch.fail", { err: String(err) }));
         this.setBusy(false);
       }
     };
@@ -464,30 +463,30 @@ class App {
   }
   
   private async askPhrase(): Promise<void> {
-    const count = window.confirm("24 词? (确定 = 24, 取消 = 12)") ? 24 : 12;
-    this.log(`> 生成恢复短语 (${count} 词)...`);
+    const count = window.confirm(this.i18n.t("prompt.phrase.confirm")) ? 24 : 12;
+    this.log(this.i18n.t("log.phrase.gen", { count }));
     try {
       const wasm = await loadWasm();
       const phrase = wasm.generate_recovery_phrase(count);
-      this.log(`> 恢复短语: ${phrase}`);
-      this.log("[提示] 请妥善保管！此短语可作为第二因素用于解密");
+      this.log(this.i18n.t("log.phrase.value", { phrase }));
+      this.log(this.i18n.t("log.phrase.warn"));
       await this.clipboard.copy(phrase);
-      this.log("[提示] 已复制到剪贴板");
+      this.log(this.i18n.t("log.copied"));
     } catch (err) {
-      this.log(`[错误] 生成失败: ${String(err)}`);
+      this.log(this.i18n.t("log.phrase.fail", { err: String(err) }));
     }
   }
   
   private async askTextEncrypt(): Promise<void> {
-    const text = window.prompt("输入要加密的文本:", "");
-    if (text === null || !text) { this.log("[提示] 已取消"); return; }
-    const opts = await PasswordModal.show({ title: "[文本加密] 输入密码", mode: "encrypt" });
-    if (!opts) { this.log("[提示] 已取消"); return; }
+    const text = window.prompt(this.i18n.t("prompt.text.input"), "");
+    if (text === null || !text) { this.log(this.i18n.t("log.cancelled")); return; }
+    const opts = await PasswordModal.show({ titleKey: "modal.textenc.title", mode: "encrypt" });
+    if (!opts) { this.log(this.i18n.t("log.cancelled")); return; }
     this.setBusy(true);
     try {
       const enc = new TextEncoder();
       const payload = enc.encode(text).buffer as ArrayBuffer;
-      this.log(`> 加密文本 (${text.length} 字符)`);
+      this.log(this.i18n.t("log.text.encrypt", { count: text.length }));
       const options: Record<string, unknown> = {
         compressLevel: opts.compressLevel ?? 3,
         mode: opts.mode ?? "auto",
@@ -499,15 +498,15 @@ class App {
       this._lastOp = "encrypt";
       this.worker.postMessage({ type: "encrypt", data: payload, password: opts.password, options });
     } catch (err) {
-      this.log(`[错误] 加密失败: ${String(err)}`);
+      this.log(this.i18n.t("log.encrypt.fail", { err: String(err) }));
       this.setBusy(false);
     }
   }
   
   private cmdClear(): void {
-    if (confirm("确定清除所有敏感数据？")) {
+    if (confirm(this.i18n.t("confirm.clear"))) {
       this.terminal.clear();
-      this.log("> 内存已清除 - 所有敏感变量已覆盖");
+      this.log(this.i18n.t("log.cleared"));
       void this.clipboard.clearClipboard();
     }
   }

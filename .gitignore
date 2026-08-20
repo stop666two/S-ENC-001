@@ -39,3 +39,6 @@ Thumbs.db
 *.tmp
 # Temp files
 wasm/src/_wordlist_array.txt
+
+# playwright MCP artifacts
+.playwright-mcp/

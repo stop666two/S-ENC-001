@@ -8,8 +8,14 @@ export class I18nManager {
   currentLang: Lang = "zh-CN";
   private messages: Record<Lang, Messages> = { "zh-CN": zh, "en-US": en };
 
-  t(key: string): string {
-    return this.messages[this.currentLang][key] ?? key;
+  t(key: string, params?: Record<string, string | number>): string {
+    let s = this.messages[this.currentLang][key] ?? key;
+    if (params) {
+      for (const [k, v] of Object.entries(params)) {
+        s = s.split("{" + k + "}").join(String(v));
+      }
+    }
+    return s;
   }
 
   toggle(): void {
@@ -18,7 +24,6 @@ export class I18nManager {
     this.apply();
   }
 
-  /** Apply translations to all [data-i18n] elements in the DOM */
   apply(): void {
     document.querySelectorAll("[data-i18n]").forEach((el) => {
       const key = el.getAttribute("data-i18n");
@@ -27,11 +32,10 @@ export class I18nManager {
     document.documentElement.lang = this.currentLang === "zh-CN" ? "zh-CN" : "en";
   }
 
-  /** Load persisted language preference */
   load(): void {
     const saved = localStorage.getItem("s-enc-lang");
     if (saved === "en-US" || saved === "zh-CN") this.currentLang = saved;
   }
 }
 
-export {};
+export const i18n = new I18nManager();

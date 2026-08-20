@@ -3,13 +3,19 @@
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范。
 版本号格式：语义化版本 [SemVer](https://semver.org/lang/zh-CN/)。
 
+## [1.2.1] - 2026-08-20
+
+### Added
+- **加密弹窗始终显示压缩模式与压缩级别**：单文件、多文件、批量加密在选择文件后的密码弹窗中均可直接选择（自动 / 开启 / 关闭、级别 1/3/5/9）
+
+### Changed
+- **界面全面汉化并接入 i18n**：密码生成器、加密/解密弹窗、全部日志、状态栏与原生对话框（prompt/confirm）不再硬编码文本，中英文切换即时生效并持久化（localStorage `s-enc-lang`），i18n 支持 `{参数}` 占位符替换
+
+### Fixed
+- **弹窗布局错位**：label 与输入框由 flex 挤压改为网格对齐（标签列 180px + 输入列自适应），所有输入框起点与宽度统一；弹窗超高时内部滚动
+
 ## [1.2.0] - 2026-08-20
 
 ### Added
 - **start.bat 一键启动脚本**：检查 Node.js / Python 3 运行时（Windows 商店版 python 不可用时自动回退 `py` launcher），两者都可用时让用户选择 N/P 启动 dist 静态服务器并自动打开浏览器（默认端口 4173，可用第一个参数覆盖）
 - **serve.mjs 零依赖静态服务器**：Node.js 直接服务 dist/ 目录，正确 MIME 类型（含 `application/wasm`）、404 兜底与路径穿越防护
-
-
-## [1.1.2] - 2026-08-20
-
-### Changed

@@ -1,3 +1,5 @@
+import { i18n } from "./i18n";
+
 export interface ModalResult {
   password: string;
   compressLevel?: number;
@@ -8,33 +10,42 @@ export interface ModalResult {
 }
 
 export class PasswordModal {
-  static show(options: { title: string; mode: "encrypt" | "decrypt"; multi?: boolean }): Promise<ModalResult | null> {
+  static show(options: { titleKey: string; mode: "encrypt" | "decrypt"; multi?: boolean }): Promise<ModalResult | null> {
     return new Promise((resolve) => {
       const overlay = document.createElement("div");
       overlay.className = "modal-overlay";
 
-      const multiRow = options.mode === "encrypt" && options.multi
-        ? `<label>压缩级别: <select id="pm-level" class="term-input"><option value="1">1 (最快)</option><option value="3" selected>3 (默认)</option><option value="5">5</option><option value="9">9 (最小)</option></select></label>
-          <label>压缩模式: <select id="pm-mode" class="term-input"><option value="auto" selected>自动</option><option value="on">开启</option><option value="off">关闭</option></select></label>`
-        : `<input type="hidden" id="pm-level" value="3" /><input type="hidden" id="pm-mode" value="auto" />`;
+      const levelOptions = [1, 3, 5, 9]
+        .map((n) => `<option value="${n}"${n === 3 ? " selected" : ""}>${i18n.t("modal.level.opt." + n)}</option>`)
+        .join("");
+      const modeOptions = ["auto", "on", "off"]
+        .map((m) => `<option value="${m}"${m === "auto" ? " selected" : ""}>${i18n.t("modal.mode." + m)}</option>`)
+        .join("");
 
-      const splitRow = options.mode === "encrypt"
-        ? '<label>分割大小 (MB, 0=不分割): <input type="number" id="pm-split" class="term-input" min="0" max="1024" value="0" /></label>'
-        : '<input type="hidden" id="pm-split" value="0" />';
+      const compressRow =
+        options.mode === "encrypt"
+          ? `<label class="modal-field"><span>${i18n.t("modal.level")}</span><select id="pm-level" class="term-input">${levelOptions}</select></label>
+          <label class="modal-field"><span>${i18n.t("modal.mode")}</span><select id="pm-mode" class="term-input">${modeOptions}</select></label>`
+          : `<input type="hidden" id="pm-level" value="3" /><input type="hidden" id="pm-mode" value="auto" />`;
+
+      const splitRow =
+        options.mode === "encrypt"
+          ? `<label class="modal-field"><span>${i18n.t("modal.split")}</span><input type="number" id="pm-split" class="term-input" min="0" max="1024" value="0" /></label>`
+          : `<input type="hidden" id="pm-split" value="0" />`;
 
       overlay.innerHTML = `
         <div class="modal">
-          <h3>${options.title}</h3>
+          <h3>${i18n.t(options.titleKey)}</h3>
           <div class="modal-body">
-            <label>密码: <input type="password" id="pm-password" class="term-input" autocomplete="off" /></label>
-            <label>确认密码: <input type="password" id="pm-password2" class="term-input" autocomplete="off" /></label>
-            <label>恢复短语 (可选): <input type="text" id="pm-phrase" class="term-input" placeholder="BIP39 短语作为第二因素" /></label>
-            <label>密钥文件 (可选): <input type="file" id="pm-keyfile" class="term-input" /></label>
-            ${multiRow}
+            <label class="modal-field"><span>${i18n.t("modal.password")}</span><input type="password" id="pm-password" class="term-input" autocomplete="off" /></label>
+            <label class="modal-field"><span>${i18n.t("modal.password2")}</span><input type="password" id="pm-password2" class="term-input" autocomplete="off" /></label>
+            ${compressRow}
             ${splitRow}
+            <label class="modal-field"><span>${i18n.t("modal.phrase")}</span><input type="text" id="pm-phrase" class="term-input" placeholder="${i18n.t("modal.phrase.placeholder")}" /></label>
+            <label class="modal-field"><span>${i18n.t("modal.keyfile")}</span><input type="file" id="pm-keyfile" class="term-input" /></label>
             <div class="modal-actions">
-              <button id="pm-ok" class="term-btn">[确认]</button>
-              <button id="pm-cancel" class="term-btn">[取消]</button>
+              <button id="pm-ok" class="term-btn">${i18n.t("modal.ok")}</button>
+              <button id="pm-cancel" class="term-btn">${i18n.t("modal.cancel")}</button>
             </div>
           </div>
         </div>
