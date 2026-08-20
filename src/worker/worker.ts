@@ -8,7 +8,7 @@ let wasm: WasmModule | null = null;
 async function ensureWasm(): Promise<WasmModule> {
   if (!wasm) {
     // Load from /wasm (public dir, single copy in dist)
-    const mod = await (eval('import("/wasm/s_enc_core.js")') as Promise<WasmModule>);
+    const mod = await (import(/* @vite-ignore */ "/wasm/s_enc_core.js") as Promise<WasmModule>);
     await mod.default();
     wasm = mod;
   }

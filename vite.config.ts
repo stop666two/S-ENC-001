@@ -29,6 +29,9 @@ export default defineConfig({
   },
   worker: {
     format: "es",
+    rollupOptions: {
+      external: ["/wasm/s_enc_core.js"],
+    },
   },
   server: {
     port: 3081,

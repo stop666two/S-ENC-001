@@ -34,7 +34,7 @@ export class PasswordGenerator {
     (this.overlay.querySelector("#pg-generate") as HTMLElement).onclick = async () => {
       const result = this.overlay!.querySelector("#pg-result") as HTMLElement;
       try {
-        const wasm = await (eval('import("/wasm/s_enc_core.js")') as Promise<typeof import("../wasm-pkg/s_enc_core.js")>);
+        const wasm = await (import(/* @vite-ignore */ "/wasm/s_enc_core.js") as Promise<typeof import("../wasm-pkg/s_enc_core.js")>);
         await wasm.default();
         const length = Number((this.overlay!.querySelector("#pg-length") as HTMLInputElement).value);
         const upper = (this.overlay!.querySelector("#pg-upper") as HTMLInputElement).checked;

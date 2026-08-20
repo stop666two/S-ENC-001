@@ -6,7 +6,7 @@ async function loadEstimateWasm(): Promise<typeof import("../wasm-pkg/s_enc_core
   if (!wasmPromise) {
     wasmPromise = (async () => {
       try {
-        const mod = await (eval('import("/wasm/s_enc_core.js")') as Promise<typeof import("../wasm-pkg/s_enc_core")>);
+        const mod = await (import(/* @vite-ignore */ "/wasm/s_enc_core.js") as Promise<typeof import("../wasm-pkg/s_enc_core")>);
         await mod.default();
         return mod;
       } catch {
