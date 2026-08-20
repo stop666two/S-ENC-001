@@ -16,6 +16,9 @@ export class Terminal {
     entry.className = "term-line";
     entry.textContent = line;
     this.el.appendChild(entry);
+    if (this.el.childElementCount > this.maxLines) {
+      this.el.removeChild(this.el.firstElementChild as Element);
+    }
     this.el.scrollTop = this.el.scrollHeight;
   }
 

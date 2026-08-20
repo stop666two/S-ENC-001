@@ -37,6 +37,7 @@ self.onmessage = async (e: MessageEvent<WorkerCommand>) => {
         const now = Date.now();
         const ts = Math.floor(now / 60000);
         const iso = new Date(now).toISOString();
+        post({ type: "progress", current: 0, total: 1 });
         const out = w.encrypt(
           new Uint8Array(data),
           password,
@@ -49,6 +50,7 @@ self.onmessage = async (e: MessageEvent<WorkerCommand>) => {
           iso,
           (fileListJson as string | undefined) ?? null,
         );
+        post({ type: "progress", current: 1, total: 1 });
         post({ type: "done", data: out.buffer as ArrayBuffer, metadata: { kind: "encrypt" } });
         break;
       }
@@ -56,6 +58,7 @@ self.onmessage = async (e: MessageEvent<WorkerCommand>) => {
         const { data, password, options } = cmd;
         const keyFileHash = (options as Record<string, unknown>)?.keyFileHash as Uint8Array | undefined;
         const recoveryPhrase = (options as Record<string, unknown>)?.recoveryPhrase as string | undefined;
+        post({ type: "progress", current: 0, total: 1 });
         const result = w.decrypt(
           new Uint8Array(data),
           password,
@@ -75,6 +78,7 @@ self.onmessage = async (e: MessageEvent<WorkerCommand>) => {
         } catch {
           // best-effort
         }
+        post({ type: "progress", current: 1, total: 1 });
         post({
           type: "done",
           data: result.data().buffer as ArrayBuffer,

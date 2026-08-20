@@ -7,9 +7,3 @@ export function triggerDownload(data: ArrayBuffer | Uint8Array, filename: string
   a.click();
   URL.revokeObjectURL(url);
 }
-
-export function triggerMultipleDownloads(files: { data: ArrayBuffer; name: string }[]): void {
-  for (const [index, f] of files.entries()) {
-    setTimeout(() => triggerDownload(f.data, f.name), 200 * index);
-  }
-}
