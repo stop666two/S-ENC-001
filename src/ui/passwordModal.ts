@@ -18,6 +18,10 @@ export class PasswordModal {
           <label>压缩模式: <select id="pm-mode" class="term-input"><option value="auto" selected>自动</option><option value="on">开启</option><option value="off">关闭</option></select></label>`
         : `<input type="hidden" id="pm-level" value="3" /><input type="hidden" id="pm-mode" value="auto" />`;
 
+      const splitRow = options.mode === "encrypt"
+        ? '<label>分割大小 (MB, 0=不分割): <input type="number" id="pm-split" class="term-input" min="0" max="1024" value="0" /></label>'
+        : '<input type="hidden" id="pm-split" value="0" />';
+
       overlay.innerHTML = `
         <div class="modal">
           <h3>${options.title}</h3>
@@ -27,6 +31,7 @@ export class PasswordModal {
             <label>恢复短语 (可选): <input type="text" id="pm-phrase" class="term-input" placeholder="BIP39 短语作为第二因素" /></label>
             <label>密钥文件 (可选): <input type="file" id="pm-keyfile" class="term-input" /></label>
             ${multiRow}
+            ${splitRow}
             <div class="modal-actions">
               <button id="pm-ok" class="term-btn">[确认]</button>
               <button id="pm-cancel" class="term-btn">[取消]</button>
@@ -48,10 +53,12 @@ export class PasswordModal {
         if (pw.value !== pw2.value) { pw2.focus(); pw2.style.borderColor = "#f00"; return; }
         const levelEl = overlay.querySelector("#pm-level") as HTMLSelectElement;
         const modeEl = overlay.querySelector("#pm-mode") as HTMLSelectElement;
+        const splitEl = overlay.querySelector("#pm-split") as HTMLInputElement;
         const result: ModalResult = {
           password: pw.value,
           compressLevel: levelEl ? Number(levelEl.value) : 3,
           mode: (modeEl?.value as "on" | "off" | "auto") ?? "auto",
+          splitSize: splitEl ? Number(splitEl.value) : 0,
         };
         if (phrase.value.trim()) result.recoveryPhrase = phrase.value.trim();
         if (keyFile.files?.[0]) result.keyFile = keyFile.files[0];

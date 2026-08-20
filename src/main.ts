@@ -32,6 +32,7 @@ class App {
   private lastEncryptedName = "";
   private _lastOp: "encrypt" | "decrypt" | "hash" | "hmac" | null = null;
   private _lastDecryptMetadata: Record<string, unknown> | null = null;
+  private _pendingSplitSize = 0;
 
   constructor() {
     const appEl = document.getElementById("app")!;
@@ -140,10 +141,34 @@ class App {
     }
   }
 
-  private onEncryptDone(data: ArrayBuffer): void {
+  private async onEncryptDone(data: ArrayBuffer): Promise<void> {
     const outName = this.lastEncryptedName || "secret.enc";
-    triggerDownload(data, outName);
-    this.log(`> 已生成加密文件: ${outName} (${(data.byteLength / 1024).toFixed(1)} KB)`);
+    const splitMB = this._pendingSplitSize;
+    this._pendingSplitSize = 0;
+
+    if (splitMB > 0 && data.byteLength > splitMB * 1024 * 1024) {
+      try {
+        const wasm = await loadWasm();
+        const chunkSize = BigInt(Math.round(splitMB * 1024 * 1024));
+        const chunks = wasm.split_file(new Uint8Array(data), chunkSize);
+        const base = outName.replace(/\.enc$/, "");
+        this.log(`> 分割为 ${chunks.length} 个分片 (${splitMB} MB/片)...`);
+        const pad = String(chunks.length).length;
+        for (let i = 0; i < chunks.length; i++) {
+          const partName = `${base}.part${String(i + 1).padStart(pad, "0")}`;
+          const bytes = chunks[i] as Uint8Array;
+          setTimeout(() => triggerDownload(bytes.buffer as ArrayBuffer, partName), 300 * i);
+        }
+        this.log(`> 已触发 ${chunks.length} 个 .part 分片下载 (总 ${(data.byteLength / 1024).toFixed(1)} KB)`);
+        this.log("[提示] 解密时选择全部 .part 文件即可自动合并");
+      } catch (err) {
+        this.log(`[错误] 分割失败，下载完整文件: ${String(err)}`);
+        triggerDownload(data, outName);
+      }
+    } else {
+      triggerDownload(data, outName);
+      this.log(`> 已生成加密文件: ${outName} (${(data.byteLength / 1024).toFixed(1)} KB)`);
+    }
     this.log("[提示] 加密完成。原始文件可能仍残留于磁盘，建议安全擦除。");
     void this.clipboard.clearClipboard();
   }
@@ -295,6 +320,7 @@ class App {
       this.log(`> 预估加密后大小: ${this.estimator.formatSize(est)}`);
 
       this.lastEncryptedName = (files.length === 1 ? files[0].name : "archive") + ".enc";
+      this._pendingSplitSize = opts.splitSize ?? 0;
       const options: Record<string, unknown> = {
         compressLevel: opts.compressLevel ?? 3,
         mode: opts.mode ?? "auto",
@@ -413,6 +439,7 @@ class App {
           const buf = await f.arrayBuffer();
           this.log(`> [${i + 1}/${files.length}] 加密: ${f.name}`);
           this.lastEncryptedName = f.name + ".enc";
+          this._pendingSplitSize = opts.splitSize ?? 0;
           this._lastOp = "encrypt";
           this.worker.postMessage({
             type: "encrypt",
@@ -468,6 +495,7 @@ class App {
         recoveryPhrase: opts.recoveryPhrase,
       };
       this.lastEncryptedName = "text.enc";
+      this._pendingSplitSize = opts.splitSize ?? 0;
       this._lastOp = "encrypt";
       this.worker.postMessage({ type: "encrypt", data: payload, password: opts.password, options });
     } catch (err) {
