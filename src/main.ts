@@ -7,6 +7,7 @@ import { ProgressBar } from "./ui/progress";
 import { PasswordGenerator } from "./ui/passwordGen";
 import { PasswordModal } from "./ui/passwordModal";
 import { ModeChoice } from "./ui/modeChoice";
+import { ConfirmModal } from "./ui/confirmModal";
 import { MainWorker, WorkerEvent } from "./worker/mainWorker";
 import { triggerDownload } from "./core/download";
 import { ClipboardManager } from "./core/clipboard";
@@ -221,7 +222,7 @@ class App {
     document.getElementById("btn-decrypt")!.onclick = () => void this.askDecrypt();
     document.getElementById("btn-password")!.onclick = () => this.passwordGen.show();
     document.getElementById("btn-phrase")!.onclick = () => void this.askPhrase();
-    document.getElementById("btn-clear")!.onclick = () => this.cmdClear();
+    document.getElementById("btn-clear")!.onclick = () => void this.cmdClear();
     document.getElementById("btn-lang")!.onclick = () => {
       this.i18n.toggle();
     };
@@ -277,7 +278,7 @@ class App {
       if (opts.textContent !== undefined) {
         const enc = new TextEncoder();
         payload = enc.encode(opts.textContent).buffer as ArrayBuffer;
-        filename = "text.txt";
+        filename = "text.enc";
         this.log(this.i18n.t("log.text.encrypt", { count: opts.textContent.length }));
       } else if (files.length === 1) {
         payload = await files[0].arrayBuffer();
@@ -380,7 +381,15 @@ class App {
   }
 
   private async askPhrase(): Promise<void> {
-    const count = window.confirm(this.i18n.t("prompt.phrase.confirm")) ? 24 : 12;
+    const choice = await ConfirmModal.choose({
+      titleKey: "modal.phrasechoice.title",
+      choices: [
+        { id: "24", label: this.i18n.t("modal.phrasechoice.24") },
+        { id: "12", label: this.i18n.t("modal.phrasechoice.12") },
+      ],
+    });
+    if (!choice) { this.log(this.i18n.t("log.cancelled")); return; }
+    const count = choice === "24" ? 24 : 12;
     this.log(this.i18n.t("log.phrase.gen", { count }));
     try {
       const wasm = await loadWasm();
@@ -394,8 +403,9 @@ class App {
     }
   }
   
-  private cmdClear(): void {
-    if (confirm(this.i18n.t("confirm.clear"))) {
+  private async cmdClear(): Promise<void> {
+    const ok = await ConfirmModal.show({ titleKey: "confirm.clear.title", message: this.i18n.t("confirm.clear"), danger: true });
+    if (ok) {
       this.terminal.clear();
       this.log(this.i18n.t("log.cleared"));
       void this.clipboard.clearClipboard();

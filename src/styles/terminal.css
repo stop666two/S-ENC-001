@@ -344,6 +344,16 @@ input[type="checkbox"] {
   #status-bar {
     font-size: 10px;
   }
+
+  #header {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+
+  .modal-body label.modal-field {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
 }
 
 /* ===== Scrollbar ===== */
