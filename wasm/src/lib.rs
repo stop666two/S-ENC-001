@@ -1,4 +1,4 @@
-﻿//! S-ENC-001 Core WASM Module
+//! S-ENC-001 Core WASM Module
 //! All cryptographic operations live here. The frontend JS only
 //! handles UI, file streaming and data transfer.
 
@@ -17,6 +17,7 @@ use wasm_bindgen::prelude::*;
 use kdf::derive_keys;
 use container::{EncryptedHeader, EncryptionInfo, CompressionInfo, HmacInfo, FileInfo, ParamBlock};
 use base64::Engine;
+use zeroize::Zeroize;
 
 #[derive(Debug)]
 #[wasm_bindgen]
@@ -88,7 +89,7 @@ fn encrypt_inner(
     let timestamp = timestamp_utc_minutes.to_be_bytes();
 
     let kfh: Option<&[u8; 32]> = key_file_hash.as_deref().and_then(|v| v.try_into().ok());
-    let (enc_key, hmac_key) = derive_keys(
+    let (mut enc_key, mut hmac_key) = derive_keys(
         password, &salt, &entropy, &timestamp, kfh, recovery_phrase.as_deref(),
     )?;
 
@@ -165,6 +166,8 @@ fn encrypt_inner(
     out.extend_from_slice(&header_ct);
     out.extend_from_slice(&ciphertext);
 
+    enc_key.zeroize();
+    hmac_key.zeroize();
     Ok(out)
 }
 
@@ -213,7 +216,7 @@ fn decrypt_inner(
     let param = ParamBlock::parse(container)?;
 
     let kfh: Option<&[u8; 32]> = key_file_hash.as_deref().and_then(|v| v.try_into().ok());
-    let (enc_key, hmac_key) = derive_keys(
+    let (mut enc_key, mut hmac_key) = derive_keys(
         password, &param.salt, &param.entropy, &param.timestamp, kfh, recovery_phrase.as_deref(),
     )?;
 
@@ -235,6 +238,8 @@ fn decrypt_inner(
     let expected: Vec<u8> = B64.decode(expected_b64).map_err(|e| format!("HMAC decode error: {e}"))?;
     let hmac_ok = computed.as_slice() == expected.as_slice();
     if !hmac_ok {
+        enc_key.zeroize();
+        hmac_key.zeroize();
         return Err("WRONG_PASSWORD_OR_CORRUPT".to_string());
     }
 
@@ -257,6 +262,8 @@ fn decrypt_inner(
         payload
     };
 
+    enc_key.zeroize();
+    hmac_key.zeroize();
     Ok(DecryptResult {
         data,
         header_json: serde_json::to_string(&header).map_err(|e| format!("header serialize error: {e}"))?,

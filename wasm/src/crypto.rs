@@ -82,7 +82,7 @@ pub fn decrypt_stream(
         } else {
             block_ct_len
         };
-        if offset + chunk_len > ciphertext.len() || chunk_len <= TAG_SIZE {
+        if offset + chunk_len > ciphertext.len() || chunk_len < TAG_SIZE {
             return Err("Ciphertext truncated".to_string());
         }
         let ct = &ciphertext[offset..offset + chunk_len];

@@ -36,6 +36,9 @@ pub fn generate_password(
     // Default exclusions (ambiguous) plus user-specified
     let mut excluded: Vec<u8> = DEFAULT_AMBIGUOUS.to_vec();
     for c in exclude_chars.chars() {
+        if !c.is_ascii() {
+            return Err("Exclude characters must be ASCII".to_string());
+        }
         let b = c as u8;
         if !excluded.contains(&b) {
             excluded.push(b);
@@ -91,6 +94,12 @@ mod tests {
     fn test_custom_exclude() {
         let p = generate_password(32, true, false, false, false, "A,B,C").unwrap();
         assert!(!p.contains('A') && !p.contains('B') && !p.contains('C'));
+    }
+
+    #[test]
+    fn test_non_ascii_exclude_rejected() {
+        assert!(generate_password(16, true, true, true, true, "密").is_err());
+        assert!(generate_password(16, true, true, true, true, "Aé").is_err());
     }
 
     #[test]
