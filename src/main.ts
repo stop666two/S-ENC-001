@@ -140,7 +140,7 @@ class App {
       if (kind === "encrypt") {
         this.onEncryptDone(e.data);
       } else if (kind === "decrypt") {
-        this.onDecryptDone(e.data, (e.metadata as Record<string, unknown>)?.headerJson as string);
+        void this.onDecryptDone(e.data, (e.metadata as Record<string, unknown>)?.headerJson as string);
       } else if (kind === "hash") {
         this.onHashDone(e.data, (e.metadata as Record<string, unknown>)?.algorithm as string);
       }
@@ -179,7 +179,7 @@ class App {
     void this.clipboard.clearClipboard();
   }
 
-  private onDecryptDone(data: ArrayBuffer, headerJson: string): void {
+  private async onDecryptDone(data: ArrayBuffer, headerJson: string): Promise<void> {
     try {
       const header = JSON.parse(headerJson) as Record<string, unknown>;
       const originalName = (header.originalFilename as string) ?? "decrypted";
@@ -212,7 +212,8 @@ class App {
         triggerDownload(data, originalName);
         this.log(this.i18n.t("log.restored", { name: originalName, size: (data.byteLength / 1024).toFixed(1) }));
       }
-      const shaHex = this.bytesToHex(new Uint8Array(data));
+      const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", data));
+      const shaHex = this.bytesToHex(digest);
       this.log(this.i18n.t("log.sha", { hash: shaHex }));
     } catch (err) {
       this.log(this.i18n.t("log.decrypt.fail", { err: String(err) }));

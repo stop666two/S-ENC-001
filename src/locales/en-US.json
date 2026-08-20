@@ -44,7 +44,7 @@
   "log.files.downloaded": "> Triggered {count} file downloads",
   "log.unpack.fail": "[error] Unpack failed: {err}",
   "log.restored": "> Restored file: {name} ({size} KB)",
-  "log.sha": "> SHA-256: {hash}... (full hash in hash tool)",
+  "log.sha": "> SHA-256: {hash}",
   "log.hash.compute": "> Computing {algo}: {name}",
   "log.hash.copy": "[info] Hash copied to clipboard",
   "log.match": "[info] MATCH - hashes equal ✓",

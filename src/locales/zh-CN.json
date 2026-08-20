@@ -44,7 +44,7 @@
   "log.files.downloaded": "> 已触发 {count} 个文件下载",
   "log.unpack.fail": "[错误] 解包失败: {err}",
   "log.restored": "> 已恢复文件: {name} ({size} KB)",
-  "log.sha": "> SHA-256: {hash}... (完整哈希见哈希工具)",
+  "log.sha": "> SHA-256: {hash}",
   "log.hash.compute": "> 计算 {algo}: {name}",
   "log.hash.copy": "[提示] 哈希已复制到剪贴板",
   "log.match": "[提示] MATCH - 哈希一致 ✓",
