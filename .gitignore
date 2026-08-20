@@ -13,8 +13,6 @@ public/wasm/
 
 # ===== Local toolchains (zig, winlibs - downloaded by build.bat) =====
 tools/
-toolszig-extract/
-toolszig.zip
 
 # ===== AGENTS.md must NEVER be committed (project rule) =====
 AGENTS.md

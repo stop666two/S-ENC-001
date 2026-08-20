@@ -3,6 +3,17 @@
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范。
 版本号格式：语义化版本 [SemVer](https://semver.org/lang/zh-CN/)。
 
+## [1.1.0] - 2026-08-20
+
+### Added
+- **加密后分割 .part 分片**：加密完成时可按指定大小（MB）分割为多个 .partNN 分片下载；解密时选择全部 .part 文件自动合并
+
+### Changed
+- 整理项目文件：删除未引用的词表源文件、重复 manifest、构建临时文件
+
+### Fixed
+- 无
+
 ## [1.0.0] - 2026-08-20
 
 ### Added
