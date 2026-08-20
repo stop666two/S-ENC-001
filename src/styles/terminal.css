@@ -459,3 +459,42 @@ input[type="checkbox"] {
   font-size: 12px;
   margin-bottom: 4px;
 }
+/* ===== Password Modal Enhancements ===== */
+.modal-body .pw-row {
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+}
+.modal-body .pw-row input {
+  flex: 1;
+  min-width: 0;
+}
+.modal-body .pw-toggle {
+  padding: 6px 8px;
+  font-size: 12px;
+  flex: none;
+}
+.modal-body .pw-strength {
+  font-size: 12px;
+  text-align: right;
+}
+.modal-body .pw-strength.pw-weak {
+  color: var(--error);
+}
+.modal-body .pw-strength.pw-medium {
+  color: var(--accent);
+}
+.modal-body .pw-strength.pw-strong {
+  color: var(--text);
+}
+.modal-body .phrase-box {
+  border: 1px dashed var(--accent);
+  padding: 12px;
+  font-size: 13px;
+  word-break: break-all;
+  user-select: all;
+}
+.modal-body .result-copy {
+  margin-top: 4px;
+}
+

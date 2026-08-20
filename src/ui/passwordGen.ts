@@ -2,6 +2,7 @@ import { i18n } from "./i18n";
 
 export class PasswordGenerator {
   private overlay: HTMLElement | null = null;
+  private keyHandler: ((e: KeyboardEvent) => void) | null = null;
 
   show(): void {
     this.overlay = document.createElement("div");
@@ -49,6 +50,8 @@ export class PasswordGenerator {
     };
 
     (this.overlay.querySelector("#pg-close") as HTMLElement).onclick = () => this.close();
+    this.keyHandler = (e) => { if (e.key === "Escape") this.close(); };
+    document.addEventListener("keydown", this.keyHandler);
     (this.overlay.querySelector("#pg-use") as HTMLElement).onclick = async () => {
       const result = this.overlay!.querySelector("#pg-result") as HTMLElement;
       if (result.textContent && !result.textContent.startsWith("[")) {
@@ -59,6 +62,10 @@ export class PasswordGenerator {
   }
 
   private close(): void {
+    if (this.keyHandler) {
+      document.removeEventListener("keydown", this.keyHandler);
+      this.keyHandler = null;
+    }
     this.overlay?.remove();
     this.overlay = null;
   }

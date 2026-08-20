@@ -18,8 +18,15 @@ export class ModeChoice {
         </div>
       `;
       document.body.appendChild(overlay);
+      const onKey = (e: KeyboardEvent) => {
+        if (e.key === "Escape") {
+          cleanup();
+          resolve(null);
+        }
+      };
       const cleanup = () => {
         overlay.remove();
+        document.removeEventListener("keydown", onKey);
       };
       (overlay.querySelector("#mc-files") as HTMLElement).onclick = () => {
         cleanup();
@@ -39,6 +46,8 @@ export class ModeChoice {
           resolve(null);
         }
       });
+      document.addEventListener("keydown", onKey);
+      (overlay.querySelector("#mc-files") as HTMLElement).focus();
     });
   }
 }

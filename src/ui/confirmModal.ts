@@ -19,8 +19,15 @@ export class ConfirmModal {
         </div>
       `;
       document.body.appendChild(overlay);
+      const onKey = (e: KeyboardEvent) => {
+        if (e.key === "Escape") {
+          cleanup();
+          resolve(false);
+        }
+      };
       const cleanup = () => {
         overlay.remove();
+        document.removeEventListener("keydown", onKey);
       };
       (overlay.querySelector("#cm-ok") as HTMLElement).onclick = () => {
         cleanup();
@@ -36,6 +43,7 @@ export class ConfirmModal {
           resolve(false);
         }
       });
+      document.addEventListener("keydown", onKey);
       (overlay.querySelector("#cm-ok") as HTMLElement).focus();
     });
   }
@@ -59,8 +67,15 @@ export class ConfirmModal {
         </div>
       `;
       document.body.appendChild(overlay);
+      const onKey = (e: KeyboardEvent) => {
+        if (e.key === "Escape") {
+          cleanup();
+          resolve(null);
+        }
+      };
       const cleanup = () => {
         overlay.remove();
+        document.removeEventListener("keydown", onKey);
       };
       options.choices.forEach((c, i) => {
         (overlay.querySelector("#cm-choice-" + i) as HTMLElement).onclick = () => {
@@ -78,6 +93,7 @@ export class ConfirmModal {
           resolve(null);
         }
       });
+      document.addEventListener("keydown", onKey);
       (overlay.querySelector("#cm-choice-0") as HTMLElement).focus();
     });
   }

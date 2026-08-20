@@ -108,5 +108,19 @@
   "pg.generate": "[generate]",
   "pg.use": "[use]",
   "pg.close": "[close]",
-  "pg.error": "[error] {err}"
+  "pg.error": "[error] {err}",
+  "modal.strength.weak": "[weak]",
+  "modal.strength.medium": "[medium]",
+  "modal.strength.strong": "[strong]",
+  "modal.show": "[show]",
+  "modal.hide": "[hide]",
+  "modal.result.copy.full": "[copy full]",
+  "modal.result.copied": "[copied]",
+  "log.compression": "> Compression: {pct}% ({orig} → {enc})",
+  "log.expansion": "> Ciphertext larger: {pct}% ({orig} → {enc})",
+  "log.files.more": "... {count} more file(s)",
+  "modal.phrase.title": "[recovery phrase]",
+  "modal.phrase.copy": "[copy]",
+  "modal.phrase.copied": "[copied]",
+  "modal.phrase.close": "[close]"
 }

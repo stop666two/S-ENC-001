@@ -34,7 +34,12 @@ export class I18nManager {
 
   load(): void {
     const saved = localStorage.getItem("s-enc-lang");
-    if (saved === "en-US" || saved === "zh-CN") this.currentLang = saved;
+    if (saved === "en-US" || saved === "zh-CN") {
+      this.currentLang = saved;
+      return;
+    }
+    const nav = (navigator.language || "en").toLowerCase();
+    this.currentLang = nav.startsWith("zh") ? "zh-CN" : "en-US";
   }
 }
 

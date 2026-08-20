@@ -108,5 +108,19 @@
   "pg.generate": "[生成]",
   "pg.use": "[使用]",
   "pg.close": "[关闭]",
-  "pg.error": "[错误] {err}"
+  "pg.error": "[错误] {err}",
+  "modal.strength.weak": "[弱]",
+  "modal.strength.medium": "[中]",
+  "modal.strength.strong": "[强]",
+  "modal.show": "[显示]",
+  "modal.hide": "[隐藏]",
+  "modal.result.copy.full": "[复制全文]",
+  "modal.result.copied": "[已复制]",
+  "log.compression": "> 压缩率: {pct}% (原 {orig} → 密文 {enc})",
+  "log.expansion": "> 密文膨胀: {pct}% (原 {orig} → 密文 {enc})",
+  "log.files.more": "... 等共 {count} 个文件",
+  "modal.phrase.title": "[恢复短语]",
+  "modal.phrase.copy": "[复制]",
+  "modal.phrase.copied": "[已复制]",
+  "modal.phrase.close": "[关闭]"
 }
