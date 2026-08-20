@@ -10,6 +10,7 @@ import { ModeChoice } from "./ui/modeChoice";
 import { ConfirmModal } from "./ui/confirmModal";
 import { ResultModal, DecryptResultItem } from "./ui/resultModal";
 import { PhraseModal } from "./ui/phraseModal";
+import { DisclaimerModal, DISCLAIMER_SECTIONS } from "./ui/disclaimerModal";
 import { MainWorker, WorkerEvent } from "./worker/mainWorker";
 import { triggerDownload } from "./core/download";
 import { ClipboardManager } from "./core/clipboard";
@@ -73,6 +74,11 @@ class App {
     this.log(this.i18n.t("log.init"));
     this.log(this.i18n.t("log.ready"));
     this.log(this.i18n.t("log.drag"));
+    if (disclaimerAcceptedThisSession) {
+      for (const section of DISCLAIMER_SECTIONS) {
+        this.log(section);
+      }
+    }
 
     new DragDrop((files) => { void this.handleDrop(files); });
     this.bindEvents();
@@ -472,7 +478,26 @@ class App {
   }
 }
 
-new App();
+let disclaimerAcceptedThisSession = false;
+
+async function bootstrap(): Promise<void> {
+  if (localStorage.getItem("s-enc-disclaimer-accepted") !== "1") {
+    const ok = await DisclaimerModal.show();
+    if (!ok) {
+      document.body.innerHTML = "";
+      return;
+    }
+    localStorage.setItem("s-enc-disclaimer-accepted", "1");
+    disclaimerAcceptedThisSession = true;
+    console.log("[S-ENC-001] Disclaimer accepted - full text:");
+    for (const section of DISCLAIMER_SECTIONS) {
+      console.log(section);
+    }
+  }
+  new App();
+}
+
+void bootstrap();
 
 // PWA: register service worker (https or localhost only)
 if ("serviceWorker" in navigator) {

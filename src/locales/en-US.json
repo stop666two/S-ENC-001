@@ -144,5 +144,9 @@
   "hint.btn.theme": "Toggle light/dark theme",
   "hint.btn.theme.auto": "Theme: auto (follows system)",
   "hint.btn.theme.light": "Theme: light",
-  "hint.btn.theme.dark": "Theme: dark"
+  "hint.btn.theme.dark": "Theme: dark",
+  "disclaimer.title": "[Disclaimer]",
+  "disclaimer.agree": "[Agree]",
+  "disclaimer.cancel": "[Cancel]",
+  "disclaimer.need.scroll": "[info] Please read carefully and scroll to the bottom"
 }

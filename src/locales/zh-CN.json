@@ -144,5 +144,9 @@
   "hint.btn.theme": "切换深浅主题",
   "hint.btn.theme.auto": "主题: 自动 (跟随系统)",
   "hint.btn.theme.light": "主题: 浅色",
-  "hint.btn.theme.dark": "主题: 深色"
+  "hint.btn.theme.dark": "主题: 深色",
+  "disclaimer.title": "[免责声明]",
+  "disclaimer.agree": "[同意]",
+  "disclaimer.cancel": "[取消]",
+  "disclaimer.need.scroll": "[提示] 请仔细阅读并滑动到最底部"
 }

@@ -131,5 +131,6 @@ S-ENC-001/
 ## 相关文档
 
 - [界面风格规范 docs/UI-STYLE.md](docs/UI-STYLE.md) — 终端美学风格契约（重构时必须遵守）
+- [免责声明 docs/DISCLAIMER.md](docs/DISCLAIMER.md) — 首次启动弹窗正文与完整条款（同意前不渲染界面）
 - [构建计划 BUILD_PLAN.md](BUILD_PLAN.md) — 搭建阶段记录与关键技术决策
 - [变更日志 CHANGELOG.md](CHANGELOG.md)
