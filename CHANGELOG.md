@@ -3,6 +3,17 @@
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范。
 版本号格式：语义化版本 [SemVer](https://semver.org/lang/zh-CN/)。
 
+## [1.1.1] - 2026-08-20
+
+### Added
+- **加密大小估算接入 WASM**：`estimate_encrypted_size` 原生估算替代前端近似公式（公式仅作 WASM 不可用时的回退）
+
+### Fixed
+- **auto 模式估算偏差**：估算无法预知内容熵，auto 模式改为按不压缩上界保守估算，不再低估实际加密大小（高熵数据实测偏差由 -30% 修正为 0%）
+
+### Removed
+- 删除未接线的死代码 `src/worker/batchWorker.ts`（批量加密由 `main.ts` 循环实现，功能不受影响）
+
 ## [1.1.0] - 2026-08-20
 
 ### Added

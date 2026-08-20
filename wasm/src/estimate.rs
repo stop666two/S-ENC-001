@@ -16,7 +16,13 @@ pub fn estimate_encrypted_size(
     let use_compression = match mode {
         "on" => true,
         "off" => false,
-        "auto" => !is_already_compressed(filename),
+        "auto" => {
+            // Content entropy is unknowable ahead of time. Estimating
+            // compression here would risk understating the real size
+            // (zstd cannot shrink incompressible data), so use the
+            // uncompressed upper bound as a conservative estimate.
+            false
+        }
         other => return Err(format!("Unknown compression mode: {other}")),
     };
 
@@ -54,9 +60,9 @@ mod tests {
 
     #[test]
     fn test_estimate_auto_text() {
-        // .txt -> compressed -> smaller than raw+overhead
+        // .txt -> unknown entropy -> conservative upper bound (no compression assumed)
         let e = estimate_encrypted_size(1_000_000, 3, "auto", "doc.txt").unwrap();
-        assert!(e > 500_000 && e < 1_000_000);
+        assert!(e > 1_000_000 && e < 1_100_000);
     }
 
     #[test]

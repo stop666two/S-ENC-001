@@ -316,7 +316,7 @@ class App {
         this.log(`> tar 归档完成 (${(payload.byteLength / 1024).toFixed(1)} KB)`);
       }
 
-      const est = this.estimator.estimate(payload.byteLength, opts.compressLevel ?? 3, opts.mode ?? "auto", filename);
+      const est = await this.estimator.estimate(payload.byteLength, opts.compressLevel ?? 3, opts.mode ?? "auto", filename);
       this.log(`> 预估加密后大小: ${this.estimator.formatSize(est)}`);
 
       this.lastEncryptedName = (files.length === 1 ? files[0].name : "archive") + ".enc";

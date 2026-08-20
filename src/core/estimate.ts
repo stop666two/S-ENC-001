@@ -1,12 +1,43 @@
+// Size estimation backed by WASM estimate_encrypted_size, with a
+// rough fallback if the WASM module is unavailable (e.g. offline first run).
+let wasmPromise: Promise<typeof import("../wasm-pkg/s_enc_core") | null> | null = null;
+
+async function loadEstimateWasm(): Promise<typeof import("../wasm-pkg/s_enc_core") | null> {
+  if (!wasmPromise) {
+    wasmPromise = (async () => {
+      try {
+        const mod = await (eval('import("/wasm/s_enc_core.js")') as Promise<typeof import("../wasm-pkg/s_enc_core")>);
+        await mod.default();
+        return mod;
+      } catch {
+        return null;
+      }
+    })();
+  }
+  return wasmPromise;
+}
+
 export class SizeEstimator {
-  estimate(
+  async estimate(
     originalSize: number,
-    _compressLevel: number,
-    _mode: string,
-    _filename: string
-  ): number {
-    // TODO: call WASM estimate function
-    // Rough estimate: encrypted size = original + 5% overhead
+    compressLevel: number,
+    mode: string,
+    filename: string
+  ): Promise<number> {
+    try {
+      const wasm = await loadEstimateWasm();
+      if (wasm) {
+        const est = wasm.estimate_encrypted_size(
+          BigInt(originalSize),
+          compressLevel,
+          mode,
+          filename
+        );
+        return Number(est);
+      }
+    } catch {
+      // fall through to rough estimate
+    }
     return Math.round(originalSize * 1.05 + 4096);
   }
 
