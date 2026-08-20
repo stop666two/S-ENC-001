@@ -1,5 +1,3 @@
-use crate::compress::is_already_compressed;
-
 /// Rough overhead per block: nonce not stored per block in data (nonces live in header),
 /// but each 1MB plaintext block gains a 16-byte GCM tag. Plus header (~4KB typical) and
 /// the 72-byte param block.
@@ -9,9 +7,9 @@ const BLOCK: u64 = 1_048_576;
 
 pub fn estimate_encrypted_size(
     original_size: u64,
-    compress_level: u8,
+    _compress_level: u8,
     mode: &str,
-    filename: &str,
+    _filename: &str,
 ) -> Result<u64, String> {
     let use_compression = match mode {
         "on" => true,

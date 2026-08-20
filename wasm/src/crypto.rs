@@ -3,10 +3,8 @@ use aes_gcm::{
     Aes256Gcm, Nonce,
 };
 use rand::RngCore;
-use zeroize::Zeroize;
 
 pub const BLOCK_SIZE: usize = 1_048_576; // 1 MB
-pub const NONCE_SIZE: usize = 12;
 pub const TAG_SIZE: usize = 16;
 
 /// Encrypt a single block with AES-256-GCM.

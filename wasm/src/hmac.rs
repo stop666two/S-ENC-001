@@ -23,12 +23,6 @@ impl HmacCalculator {
     }
 }
 
-pub fn compute_hmac(key: &[u8; 32], data: &[u8]) -> [u8; 32] {
-    let mut calc = HmacCalculator::new(key);
-    calc.update(data);
-    calc.finalize()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -36,7 +30,9 @@ mod tests {
     #[test]
     fn test_hmac_basic() {
         let key = [7u8; 32];
-        let expected = compute_hmac(&key, b"data");
+        let mut calc = HmacCalculator::new(&key);
+        calc.update(b"data");
+        let expected = calc.finalize();
         assert_eq!(expected.len(), 32);
     }
 
@@ -45,7 +41,9 @@ mod tests {
         let key = [8u8; 32];
         let data: Vec<u8> = (0..100_000u32).map(|i| (i % 7) as u8).collect();
 
-        let oneshot = compute_hmac(&key, &data);
+        let mut oneshot_calc = HmacCalculator::new(&key);
+        oneshot_calc.update(&data);
+        let oneshot = oneshot_calc.finalize();
 
         let mut calc = HmacCalculator::new(&key);
         for chunk in data.chunks(4096) {
@@ -59,6 +57,10 @@ mod tests {
     fn test_hmac_different_keys() {
         let k1 = [1u8; 32];
         let k2 = [2u8; 32];
-        assert_ne!(compute_hmac(&k1, b"x"), compute_hmac(&k2, b"x"));
+        let mut c1 = HmacCalculator::new(&k1);
+        c1.update(b"x");
+        let mut c2 = HmacCalculator::new(&k2);
+        c2.update(b"x");
+        assert_ne!(c1.finalize(), c2.finalize());
     }
 }

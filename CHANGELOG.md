@@ -3,6 +3,11 @@
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范。
 版本号格式：语义化版本 [SemVer](https://semver.org/lang/zh-CN/)。
 
+## [1.1.2] - 2026-08-20
+
+### Changed
+- 清理 8 个 Rust 编译警告：删除无用 import（`crypto.rs` 的 `zeroize::Zeroize`、`estimate.rs` 的 `is_already_compressed`）与死代码（`kdf.rs` 的 `zeroize_bytes`、`hmac.rs` 的 `compute_hmac`、`crypto.rs` 的 `NONCE_SIZE`、`split.rs` 的 `DEFAULT_CHUNK_SIZE`）；`estimate_encrypted_size` 的 `compress_level`/`filename` 参数改为下划线前缀保留 API 签名
+
 ## [1.1.1] - 2026-08-20
 
 ### Added

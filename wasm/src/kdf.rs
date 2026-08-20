@@ -77,10 +77,6 @@ pub fn derive_keys(
     Ok((enc_key, hmac_key))
 }
 
-pub fn zeroize_bytes(data: &mut [u8]) {
-    data.zeroize();
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

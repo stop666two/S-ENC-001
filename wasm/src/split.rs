@@ -22,8 +22,6 @@ pub fn merge_files(chunks: &[Vec<u8>]) -> Result<Vec<u8>, String> {
     Ok(out)
 }
 
-pub const DEFAULT_CHUNK_SIZE: u64 = 100 * 1024 * 1024;
-
 #[cfg(test)]
 mod tests {
     use super::*;
