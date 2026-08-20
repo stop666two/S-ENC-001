@@ -405,35 +405,35 @@ class App {
       // Merge .part files if multiple selected
       let data: ArrayBuffer;
       if (files.length > 1 && files.every((f) => /[.]part[0-9]+$/.test(f.name))) {
-          this.log(this.i18n.t("log.merge", { count: files.length }));
-          const sorted = [...files].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
-          const parts = await Promise.all(sorted.map((f) => f.arrayBuffer()));
-          const total = parts.reduce((s, p) => s + p.byteLength, 0);
-          const merged = new Uint8Array(total);
-          let off = 0;
-          for (const p of parts) {
-            merged.set(new Uint8Array(p), off);
-            off += p.byteLength;
-          }
-          data = merged.buffer as ArrayBuffer;
-          this.log(this.i18n.t("log.merged"));
-        } else {
-          data = await files[0].arrayBuffer();
+        this.log(this.i18n.t("log.merge", { count: files.length }));
+        const sorted = [...files].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+        const parts = await Promise.all(sorted.map((f) => f.arrayBuffer()));
+        const total = parts.reduce((s, p) => s + p.byteLength, 0);
+        const merged = new Uint8Array(total);
+        let off = 0;
+        for (const p of parts) {
+          merged.set(new Uint8Array(p), off);
+          off += p.byteLength;
         }
-        this.log(this.i18n.t("log.decrypting"));
-        let keyFileHash: Uint8Array | undefined;
-        if (opts.keyFile) {
-          const buf = await opts.keyFile.arrayBuffer();
-          const digest = await crypto.subtle.digest("SHA-256", buf);
-          keyFileHash = new Uint8Array(digest);
-          this.log(this.i18n.t("log.keyfile.loaded"));
-        }
-        const options: Record<string, unknown> = {
-          keyFileHash,
-          recoveryPhrase: opts.recoveryPhrase,
-        };
-        this._lastOp = "decrypt";
-        this.worker.postMessage({ type: "decrypt", data, password: opts.password, options });
+        data = merged.buffer as ArrayBuffer;
+        this.log(this.i18n.t("log.merged"));
+      } else {
+        data = await files[0].arrayBuffer();
+      }
+      this.log(this.i18n.t("log.decrypting"));
+      let keyFileHash: Uint8Array | undefined;
+      if (opts.keyFile) {
+        const buf = await opts.keyFile.arrayBuffer();
+        const digest = await crypto.subtle.digest("SHA-256", buf);
+        keyFileHash = new Uint8Array(digest);
+        this.log(this.i18n.t("log.keyfile.loaded"));
+      }
+      const options: Record<string, unknown> = {
+        keyFileHash,
+        recoveryPhrase: opts.recoveryPhrase,
+      };
+      this._lastOp = "decrypt";
+      this.worker.postMessage({ type: "decrypt", data, password: opts.password, options });
       } catch (err) {
         this.log(this.i18n.t("log.decrypt.fail", { err: String(err) }));
         this.setBusy(false);
