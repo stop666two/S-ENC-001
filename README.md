@@ -187,7 +187,22 @@ S-ENC-001/
 
 ## 相关文档
 
+- [手动安装指南 docs/INSTALL.md](docs/INSTALL.md) — Windows / Linux / macOS 三平台部署（Nginx / Caddy / 轻量方案 / HTTPS）
 - [界面风格规范 docs/UI-STYLE.md](docs/UI-STYLE.md) — 终端美学风格契约（重构时必须遵守）
 - [免责声明 docs/DISCLAIMER.md](docs/DISCLAIMER.md) — 首次启动弹窗正文与完整条款（同意前不渲染界面；同意后每次刷新/一键清除，终端日志区顶部常驻协议全文）
 - [构建计划 BUILD_PLAN.md](BUILD_PLAN.md) — 搭建阶段记录与关键技术决策
 - [变更日志 CHANGELOG.md](CHANGELOG.md)
+
+## CI/CD（GitHub Actions）
+
+`.github/workflows/build-release.yml` 自动构建并发布 Release，产物为 `dist-YYYY-MM-DD-HHMMSS.zip`（北京时间）。
+
+| 触发方式 | 说明 |
+| --- | --- |
+| 手动 | GitHub → Actions → Build & Release → Run workflow，一键构建发布 |
+| push main | 推送到 `main` 分支自动构建发布 |
+| 定时 | 每天北京时间 00:00 自动构建发布（混淆随机性保证每次产物不同） |
+
+流水线：安装 Rust(wasm32) + wasm-pack + zig 0.16 → `wasm-pack build --target web --release` → 同步 `public/wasm/` → `npm ci` + `npm run build` → **主 JS 混淆**（javascript-obfuscator 低强度，Worker 与 `sw.js` 除外，源码不受影响）→ 打包 zip → 创建 GitHub Release（tag 为纯日期时间戳）并上传。
+
+Release 页：`https://github.com/stop666two/S-ENC-001/releases`

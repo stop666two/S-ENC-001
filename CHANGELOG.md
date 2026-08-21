@@ -6,6 +6,8 @@
 ## [Unreleased]
 
 ### Added
+- **CI/CD 自动构建发布**：`.github/workflows/build-release.yml`——手动 / push main / 每天北京时间 00:00 定时三种触发；流水线在 ubuntu 上完成 Rust wasm 编译（Rust + wasm-pack + zig 0.16）→ 前端构建 → 主 JS 低强度混淆（javascript-obfuscator，Worker 与 sw.js 除外）→ 打包 `dist-YYYY-MM-DD-HHMMSS.zip` → 创建 GitHub Release（tag 纯日期时间戳）
+- **手动安装指南 docs/INSTALL.md**：Windows（start.bat / Nginx / 静态托管）、Linux（Nginx / Caddy / python3 / node serve.mjs / systemd）、macOS（brew Nginx / Caddy）三平台部署步骤，含 HTTPS、wasm MIME、更新与常见问题
 - **浏览器兼容性检测**：启动时检测 WebAssembly/Web Worker/Web Crypto/TextEncoder/Decoder（关键项，缺失阻止进入）、Clipboard API/Service Worker（可选项，缺失仅警告）；报告弹窗内置 Windows/macOS/Linux/Android/iOS × Chrome/火狐/Edge 官方安装指南与重新检测按钮
 - **检测页与协议页语言/主题切换**：浏览器兼容性检测弹窗与免责声明弹窗顶部新增语言（中/英）与主题（自动/浅色/深色）切换按钮，切换即时生效并持久化
 - **免责声明英文版**：协议全文提供中英两版，日志区与弹窗按当前界面语言自动选择

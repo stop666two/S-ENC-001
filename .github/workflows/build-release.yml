@@ -1,0 +1,95 @@
+name: Build & Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 16 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: s-enc-release
+  cancel-in-progress: false
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup Rust (wasm32 target)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Setup wasm-pack
+        uses: wasm-pack/wasm-pack-action@v6
+
+      - name: Setup zig (clang for wasm)
+        uses: ziglang/setup-zig@v2
+        with:
+          version: 0.16.0
+
+      - name: Build WASM core
+        working-directory: wasm
+        env:
+          CC: zig cc -target wasm32-freestanding
+          CC_wasm32_unknown_unknown: zig cc -target wasm32-freestanding
+        run: wasm-pack build --target web --release
+
+      - name: Sync WASM to public
+        run: |
+          mkdir -p public/wasm
+          cp -r wasm/pkg/. public/wasm/
+
+      - name: Install frontend deps
+        run: npm ci
+
+      - name: Build frontend (tsc + vite + service worker)
+        run: npm run build
+
+      - name: Obfuscate main JS (keep worker & sw.js)
+        run: |
+          set -e
+          for f in dist/assets/*.js; do
+            case "$f" in
+              *worker*) echo "SKIP worker: $f";;
+              *)
+                npx --yes javascript-obfuscator@4.1.1 "$f" --output "$f" \
+                  --compact true \
+                  --string-array false --control-flow-flattening false \
+                  --dead-code-injection false --self-defending false \
+                  --rename-globals false --identifier-names-generator hexadecimal
+                ;;
+            esac
+          done
+          echo "obfuscation check (_0x markers in main bundle):"
+          grep -c "_0x" dist/assets/main.*.js || true
+
+      - name: Package zip (Beijing time)
+        run: |
+          TS="$(TZ=Asia/Shanghai date +%Y-%m-%d-%H%M%S)"
+          echo "TS=$TS" >> "$GITHUB_ENV"
+          zip -r "dist-$TS.zip" dist
+          ls -lh "dist-$TS.zip"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="$(echo "$TS" | tr -d '-')"
+          SHA_SHORT="$(git rev-parse --short HEAD)"
+          gh release create "$TAG" "dist-$TS.zip" \
+            --title "S-ENC-001 $TS" \
+            --notes "自动构建：${{ github.event_name }} · commit $SHA_SHORT · 主 JS 已混淆（Worker / sw.js 除外）" \
+            --latest
