@@ -338,7 +338,9 @@ class App {
       if (opts.textContent !== undefined) {
         const enc = new TextEncoder();
         payload = enc.encode(opts.textContent).buffer as ArrayBuffer;
-        filename = "text.enc";
+        // originalFilename lands in the container header and is used as the
+        // download name after decryption -> keep the plain-text extension.
+        filename = "text.txt";
         this.log(this.i18n.t("log.text.encrypt", { count: opts.textContent.length }));
       } else if (files.length === 1) {
         payload = await files[0].arrayBuffer();

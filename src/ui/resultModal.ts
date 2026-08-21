@@ -50,6 +50,19 @@ export function decodeText(bytes: Uint8Array): string {
   }
 }
 
+// Pull a truncated preview window back to a UTF-8 character boundary: a cut
+// mid-sequence would fail fatal decoding and fall back to GB18030 (garbled CJK).
+function alignUtf8End(bytes: Uint8Array, end: number): number {
+  if (end <= 0 || end >= bytes.length) return end;
+  if ((bytes[end] & 0xc0) !== 0x80) {
+    if ((bytes[end - 1] & 0xc0) === 0xc0) return end - 1;
+    return end;
+  }
+  let i = end;
+  while (i > 0 && (bytes[i - 1] & 0xc0) === 0x80) i--;
+  return i > 0 ? i - 1 : 0;
+}
+
 export class ResultModal {
   static detect(name: string, data: ArrayBuffer): DecryptResultItem {
     const bytes = new Uint8Array(data);
@@ -72,7 +85,13 @@ export class ResultModal {
       if (b === 9 || b === 10 || b === 13 || (b >= 32 && b <= 126) || b >= 0x80) printable++;
     }
     if (sample.length > 0 && printable / sample.length >= 0.95) {
-      const preview = decodeText(bytes.subarray(0, Math.min(size, 400))).slice(0, 100);
+      const cut = Math.min(size, 400);
+      const aligned = cut < size ? alignUtf8End(bytes, cut) : cut;
+      let preview = Array.from(decodeText(bytes.subarray(0, aligned))).slice(0, 100).join("");
+      if (!preview && size > 0) {
+        const loose = new TextDecoder("utf-8").decode(bytes.subarray(0, cut));
+        preview = Array.from(loose.endsWith("\uFFFD") ? loose.slice(0, -1) : loose).slice(0, 100).join("");
+      }
       return { name, size, data, kind: "text", preview };
     }
     return { name, size, data, kind: "binary", mime: "binary" };
