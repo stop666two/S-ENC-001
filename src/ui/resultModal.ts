@@ -50,6 +50,37 @@ export function decodeText(bytes: Uint8Array): string {
   }
 }
 
+// Fallback for non-secure contexts (LAN IP / file://) where
+// navigator.clipboard is unavailable: hidden textarea + execCommand("copy").
+function copyTextFallback(text: string): boolean {
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.top = "0";
+    ta.style.left = "0";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    const ok = document.execCommand("copy");
+    ta.remove();
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
+async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return copyTextFallback(text);
+  }
+}
+
 // Pull a truncated preview window back to a UTF-8 character boundary: a cut
 // mid-sequence would fail fatal decoding and fall back to GB18030 (garbled CJK).
 function alignUtf8End(bytes: Uint8Array, end: number): number {
@@ -196,12 +227,13 @@ export class ResultModal {
         copyBtn.onclick = async (e) => {
           e.preventDefault();
           e.stopPropagation();
-          try {
-            await navigator.clipboard.writeText(decodeText(new Uint8Array(it.data)));
+          const ok = await copyText(decodeText(new Uint8Array(it.data)));
+          if (ok) {
             copyBtn.textContent = i18n.t("modal.result.copied");
             setTimeout(() => { copyBtn.textContent = i18n.t("modal.result.copy.full"); }, 800);
-          } catch {
-            // clipboard unavailable
+          } else {
+            copyBtn.textContent = i18n.t("modal.result.copy.fail");
+            setTimeout(() => { copyBtn.textContent = i18n.t("modal.result.copy.full"); }, 2000);
           }
         };
       });

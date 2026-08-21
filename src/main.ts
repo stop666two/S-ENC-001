@@ -71,14 +71,14 @@ class App {
 
     this.i18n.apply();
 
-    this.log(this.i18n.t("log.init"));
-    this.log(this.i18n.t("log.ready"));
-    this.log(this.i18n.t("log.drag"));
     if (disclaimerAcceptedThisSession) {
       for (const section of DISCLAIMER_SECTIONS) {
         this.log(section);
       }
     }
+    this.log(this.i18n.t("log.init"));
+    this.log(this.i18n.t("log.ready"));
+    this.log(this.i18n.t("log.drag"));
 
     new DragDrop((files) => { void this.handleDrop(files); });
     this.bindEvents();
@@ -342,8 +342,7 @@ class App {
         // download name after decryption -> keep the plain-text extension.
         filename = "text.txt";
         this.log(this.i18n.t("log.text.encrypt", { count: opts.textContent.length }));
-      } else if (files.length === 1) {
-        payload = await files[0].arrayBuffer();
+      } else if (files.length === 1) {        payload = await files[0].arrayBuffer();
         filename = files[0].name;
         this.log(this.i18n.t("log.encrypting", { name: files[0].name, size: (files[0].size / 1024).toFixed(1) }));
       } else {
@@ -372,7 +371,14 @@ class App {
       this.log(this.i18n.t("log.estimate", { size: this.estimator.formatSize(est) }));
 
       this._lastPlainSize = payload.byteLength;
-      this.lastEncryptedName = (opts.textContent !== undefined ? "text" : (files.length === 1 ? files[0].name : "archive")) + ".enc";
+      const isText = opts.textContent !== undefined;
+      if (isText) {
+        const base = (opts.textFileName?.trim() || "text").replace(/[\\/:*?"<>|\u0000-\u001f]/g, "-");
+        const ext = (opts.textFileExt?.trim() || "enc").replace(/[\\/:*?"<>|\u0000-\u001f.]/g, "-");
+        this.lastEncryptedName = `${base}.${ext}`;
+      } else {
+        this.lastEncryptedName = (files.length === 1 ? files[0].name : "archive") + ".enc";
+      }
       this._pendingSplitSize = opts.splitSize ?? 0;
       const options: Record<string, unknown> = {
         compressLevel: opts.compressLevel ?? 3,
@@ -474,6 +480,11 @@ class App {
     const ok = await ConfirmModal.show({ titleKey: "confirm.clear.title", message: this.i18n.t("confirm.clear"), danger: true });
     if (ok) {
       this.terminal.clear();
+      if (disclaimerAcceptedThisSession) {
+        for (const section of DISCLAIMER_SECTIONS) {
+          this.log(section);
+        }
+      }
       this.log(this.i18n.t("log.cleared"));
       void this.clipboard.clearClipboard();
     }
@@ -483,7 +494,9 @@ class App {
 let disclaimerAcceptedThisSession = false;
 
 async function bootstrap(): Promise<void> {
-  if (localStorage.getItem("s-enc-disclaimer-accepted") !== "1") {
+  if (localStorage.getItem("s-enc-disclaimer-accepted") === "1") {
+    disclaimerAcceptedThisSession = true;
+  } else {
     const ok = await DisclaimerModal.show();
     if (!ok) {
       document.body.innerHTML = "";

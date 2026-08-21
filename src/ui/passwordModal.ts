@@ -10,6 +10,8 @@ export interface ModalResult {
   keyFile?: File;
   splitSize?: number;
   textContent?: string;
+  textFileName?: string;
+  textFileExt?: string;
 }
 
 const LS_LEVEL = "s-enc-level";
@@ -62,7 +64,11 @@ export class PasswordModal {
         encrypt
           ? options.lockContent === "text"
             ? `<input type="hidden" id="pm-ctype" value="text" />
-              <textarea id="pm-text" class="term-input" rows="4" placeholder="${i18n.t("modal.text.placeholder")}"></textarea>`
+              <textarea id="pm-text" class="term-input" rows="4" placeholder="${i18n.t("modal.text.placeholder")}"></textarea>
+              <div class="modal-name-row">
+                <label class="modal-field"><span>${i18n.t("modal.text.fname")}</span><input type="text" id="pm-fname" class="term-input" placeholder="${i18n.t("modal.text.fname.placeholder")}" /><div class="field-hint">${i18n.t("modal.text.namehint")}</div></label>
+                <label class="modal-field modal-ext-field"><span>${i18n.t("modal.text.ext")}</span><input type="text" id="pm-fext" class="term-input" placeholder="${i18n.t("modal.text.ext.placeholder")}" /><div class="field-hint">${i18n.t("modal.text.namehint")}</div></label>
+              </div>`
             : options.lockContent === "files"
               ? ""
               : `<label class="modal-field"><span>${i18n.t("modal.content")}</span>
@@ -119,6 +125,9 @@ export class PasswordModal {
           }
         };
       });
+
+      const fnameEl = overlay.querySelector("#pm-fname") as HTMLInputElement | null;
+      const fextEl = overlay.querySelector("#pm-fext") as HTMLInputElement | null;
 
       const eyeFor = (input: HTMLInputElement, eyeId: string): void => {
         const eye = overlay.querySelector("#" + eyeId) as HTMLElement;
@@ -206,6 +215,8 @@ export class PasswordModal {
           splitSize: splitEl ? Number(splitEl.value) : 0,
         };
         if ((lockedText || ctype?.value === "text") && textArea) result.textContent = textArea.value;
+        if (fnameEl && fnameEl.value.trim()) result.textFileName = fnameEl.value.trim();
+        if (fextEl && fextEl.value.trim()) result.textFileExt = fextEl.value.trim();
         if (phrase.value.trim()) result.recoveryPhrase = phrase.value.trim();
         if (keyFile.files?.[0]) result.keyFile = keyFile.files[0];
         cleanup();

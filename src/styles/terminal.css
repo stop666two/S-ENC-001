@@ -250,6 +250,21 @@ body.drag-over {
   align-items: center;
 }
 
+.modal-body .modal-name-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.modal-body .modal-name-row .modal-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.modal-body .modal-name-row .modal-ext-field {
+  flex: 0 0 120px;
+}
+
 .modal-body .modal-content-type label {
   display: inline-flex;
   align-items: center;
