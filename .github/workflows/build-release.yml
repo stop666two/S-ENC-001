@@ -33,10 +33,10 @@ jobs:
           targets: wasm32-unknown-unknown
 
       - name: Setup wasm-pack
-        uses: wasm-pack/wasm-pack-action@v6
+        uses: jetli/wasm-pack-action@v0.4.0
 
       - name: Setup zig (clang for wasm)
-        uses: ziglang/setup-zig@v2
+        uses: mlugg/setup-zig@v2.2.1
         with:
           version: 0.16.0
 
@@ -65,7 +65,7 @@ jobs:
             case "$f" in
               *worker*) echo "SKIP worker: $f";;
               *)
-                npx --yes javascript-obfuscator@4.1.1 "$f" --output "$f" \
+                npx --yes javascript-obfuscator@5.5.0 "$f" --output "$f" \
                   --compact true \
                   --string-array false --control-flow-flattening false \
                   --dead-code-injection false --self-defending false \
