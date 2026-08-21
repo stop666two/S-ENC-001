@@ -9,7 +9,37 @@
   <link rel="apple-touch-icon" href="icon-192.png" />
   <link rel="manifest" href="manifest.json" />
   <title>S-ENC-001 SECURE TERMINAL</title>
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("s-enc-theme");
+        var light = t === "light" || (t !== "dark" && window.matchMedia("(prefers-color-scheme: light)").matches);
+        document.documentElement.setAttribute("data-theme", light ? "light" : "dark");
+      } catch (e) {}
+    })();
+  </script>
   <style>
+    :root,
+    [data-theme="dark"] {
+      --bg: #000;
+      --text: #0f0;
+      --accent: #ff0;
+      --error: #f00;
+      --dim: #0a0;
+      --border: #0f0;
+      --btn-hover-bg: #0f0;
+      --btn-hover-text: #000;
+    }
+    [data-theme="light"] {
+      --bg: #fff;
+      --text: #000;
+      --accent: #00f;
+      --error: #c00;
+      --dim: #555;
+      --border: #000;
+      --btn-hover-bg: #000;
+      --btn-hover-text: #fff;
+    }
     html, body {
       margin: 0;
       padding: 0;
@@ -19,8 +49,8 @@
       font-family: 'JetBrains Mono', 'Courier New', monospace;
     }
     body {
-      background: #000;
-      color: #0f0;
+      background: var(--bg, #000);
+      color: var(--text, #0f0);
     }
     #app {
       width: 100%;

@@ -1,6 +1,7 @@
 import "./styles/terminal.css";
 import { Terminal } from "./ui/terminal";
 import { ThemeManager } from "./ui/theme";
+import { applyStoredTheme } from "./ui/theme";
 import { i18n } from "./ui/i18n";
 import { DragDrop } from "./ui/dragDrop";
 import { ProgressBar } from "./ui/progress";
@@ -10,7 +11,7 @@ import { ModeChoice } from "./ui/modeChoice";
 import { ConfirmModal } from "./ui/confirmModal";
 import { ResultModal, DecryptResultItem } from "./ui/resultModal";
 import { PhraseModal } from "./ui/phraseModal";
-import { DisclaimerModal, DISCLAIMER_SECTIONS } from "./ui/disclaimerModal";
+import { DisclaimerModal, getDisclaimerSections } from "./ui/disclaimerModal";
 import { checkBrowser, showBrowserReport } from "./ui/browserCheck";
 import { MainWorker, WorkerEvent } from "./worker/mainWorker";
 import { triggerDownload } from "./core/download";
@@ -73,7 +74,7 @@ class App {
     this.i18n.apply();
 
     if (disclaimerAcceptedThisSession) {
-      for (const section of DISCLAIMER_SECTIONS) {
+      for (const section of getDisclaimerSections()) {
         this.log(section);
       }
     }
@@ -482,7 +483,7 @@ class App {
     if (ok) {
       this.terminal.clear();
       if (disclaimerAcceptedThisSession) {
-        for (const section of DISCLAIMER_SECTIONS) {
+        for (const section of getDisclaimerSections()) {
           this.log(section);
         }
       }
@@ -495,6 +496,8 @@ class App {
 let disclaimerAcceptedThisSession = false;
 
 async function bootstrap(): Promise<void> {
+  i18n.load();
+  applyStoredTheme();
   const check = checkBrowser();
   if (check.criticalMissing) {
     showBrowserReport(check, () => { void bootstrap(); });
@@ -513,8 +516,7 @@ async function bootstrap(): Promise<void> {
     }
     localStorage.setItem("s-enc-disclaimer-accepted", "1");
     disclaimerAcceptedThisSession = true;
-    console.log("[S-ENC-001] Disclaimer accepted - full text:");
-    for (const section of DISCLAIMER_SECTIONS) {
+    for (const section of getDisclaimerSections()) {
       console.log(section);
     }
   }

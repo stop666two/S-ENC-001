@@ -1,5 +1,6 @@
 import { i18n } from "./i18n";
 import { setModalAria, trapFocus } from "./modalFocus";
+import { modalBarHtml, bindModalBar } from "./modalBar";
 
 export interface CheckItem {
   id: "wasm" | "worker" | "crypto" | "codec" | "clipboard" | "sw";
@@ -116,6 +117,7 @@ export function showBrowserReport(result: BrowserCheckResult, onRetry?: () => vo
   overlay.innerHTML = `
     <div class="modal check-modal">
       <h3>${i18n.t("check.title")}</h3>
+      ${modalBarHtml("bc")}
       <div class="modal-body">
         ${heading}
         <div class="check-section"><h4>${i18n.t("check.critical")}</h4>${criticalBlock}</div>
@@ -132,6 +134,7 @@ export function showBrowserReport(result: BrowserCheckResult, onRetry?: () => vo
   document.body.appendChild(overlay);
   setModalAria(overlay, "bc-title");
   trapFocus(overlay);
+  bindModalBar("bc");
 
   const cleanup = (): void => {
     overlay.remove();

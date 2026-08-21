@@ -1,5 +1,6 @@
 import { i18n } from "./i18n";
 import { setModalAria, trapFocus } from "./modalFocus";
+import { modalBarHtml, bindModalBar } from "./modalBar";
 
 export const DISCLAIMER_SECTIONS: string[] = [
   "【S-ENC-001 免责声明】版本 1.0.0 | 生效日期：2026 年 8 月 20 日",
@@ -17,6 +18,26 @@ export const DISCLAIMER_SECTIONS: string[] = [
   "如您对本免责声明有任何疑问，请通过项目主页 https://github.com/stop666two/S-ENC-001 与我们联系。",
 ];
 
+export const DISCLAIMER_SECTIONS_EN: string[] = [
+  "[S-ENC-001 DISCLAIMER] Version 1.0.0 | Effective date: August 20, 2026",
+  "I. Introduction: Thank you for using S-ENC-001 (hereinafter \"the Software\"). This Software is a pure front-end encryption/decryption tool; all encryption and decryption operations are performed locally in your browser, and no data is uploaded to any server. Before using the Software, please read this entire disclaimer carefully. By clicking the \"Agree\" button, you acknowledge that you have read, understood, and agree to be bound by all terms of this disclaimer. If you do not agree with any term, please click \"Cancel\" and stop using the Software.",
+  "II. Software Provided \"As Is\": The Software is provided on an \"AS IS\" and \"AS AVAILABLE\" basis, without warranties of any kind, express or implied, including but not limited to warranties of merchantability, fitness for a particular purpose, non-infringement, and that the Software is free of defects, errors, or uninterrupted operation. We make no promises regarding functional completeness, computational correctness, operational stability, or compatibility. You understand and agree that you use the Software at your own risk.",
+  "III. No Guarantee of Encryption Strength: The Software uses industry-standard encryption algorithms (Argon2id key derivation, AES-256-GCM symmetric encryption, HMAC-SHA256 integrity authentication) implemented with reference to relevant international standards. However, no encryption algorithm is absolutely unbreakable; as computing power increases and cryptography research advances, algorithm security may change. We do not guarantee that the Software can resist all forms of attack, including but not limited to brute force, side-channel, social engineering, and malware theft. Encryption strength also depends on the strength of your password, your password management habits, and the trustworthiness of the runtime environment.",
+  "IV. Responsibility for Managing Passwords, Recovery Phrases, and Key Files: The Software derives encryption keys from a password (optionally combined with a recovery phrase or key file). All input material required for key derivation is kept by you alone; the Software does not store, transmit, or back up your password, recovery phrase, key file, or their derived results. If you forget your password, lose your recovery phrase or key file, the encrypted data cannot be recovered, and no third party (including the Software developers) can help you retrieve it. Please keep the above information safe and take reasonable confidentiality measures.",
+  "V. Risk of Data Loss or Corruption: During encryption, decryption, splitting, merging, and other operations, data may be corrupted or lost due to browser anomalies, device power failure, operating system crashes, network interruptions, human error, or other causes. Please back up important data before operating and verify result integrity after operations. The Software and its developers assume no liability for any data loss, corruption, or disclosure caused by the above reasons.",
+  "VI. Security of Storage Media and Transmission: Encrypted files may be stored on your local disk, removable media, or third-party cloud drives, and may be transmitted over networks. The Software cannot control the security of storage media or transmission channels. If your storage medium or transmission channel is accessed by unauthorized third parties, even encrypted data may be at risk of theft, tampering, or destruction. Please assess and take appropriate security measures based on data sensitivity.",
+  "VII. Privacy Statement and Runtime Environment Risks: The Software is a pure front-end application; apart from loading necessary static resources and WebAssembly modules, it does not send your data, passwords, or file contents to any server. However, your browser, operating system, browser extensions, and network environment (including but not limited to proxies, VPNs, and enterprise gateways) may record your activity or intercept page content. Please use the Software only on trusted devices and networks, and be alert to risks such as keyloggers, screen recording, and malicious extensions. If the runtime environment has security flaws (e.g., browser vulnerabilities, compromised systems), the Software cannot guarantee the security of your data.",
+  "VIII. Legal Compliance and Usage Restrictions: You agree to comply with the laws and regulations of your country/region and not to use the Software for any illegal purpose, including but not limited to: storing, transmitting, or processing content that infringes others' legitimate rights, assisting others in evading law enforcement, or engaging in activities that endanger national security or public safety. You alone bear any legal liability arising from your unlawful use; the Software and its developers are not responsible.",
+  "IX. Third-Party Component Dependencies: The Software is built on several open-source third-party components (including the Rust WebAssembly ecosystem, cryptographic libraries, and front-end build tools), each released under its own license. The Software assumes no liability arising from defects, license changes, or supply-chain security incidents of third-party components (including but not limited to component poisoning and malicious maintainer behavior).",
+  "X. Use-Case Limitations and Recommendations: The Software is suitable for ordinary users to protect personal files in everyday scenarios; it does not guarantee any specific security standard (e.g., graded protection, financial-grade, or classified requirements). For highly sensitive data, trade secrets, or regulated data, we recommend consulting professional security organizations and using certified commercial encryption solutions. Do not use the Software to store, transmit, or process data specially protected by law unless you have the necessary authorization.",
+  "XI. Limitation of Liability and Terms Changes: To the maximum extent permitted by law, the Software and its developers shall not be liable for any direct, indirect, incidental, special, or consequential damages arising from the use of or inability to use the Software, including but not limited to loss of profits, data loss, business interruption, and damage to goodwill, even if advised of the possibility of such damages. We reserve the right to modify this disclaimer at any time; the modified terms will be published on this page or in related documentation. Your continued use of the Software after changes to the terms constitutes acceptance of the changed terms.",
+  "If you have any questions about this disclaimer, please contact us via the project homepage https://github.com/stop666two/S-ENC-001.",
+];
+
+export function getDisclaimerSections(): string[] {
+  return i18n.currentLang === "zh-CN" ? DISCLAIMER_SECTIONS : DISCLAIMER_SECTIONS_EN;
+}
+
 export const DISCLAIMER_TEXT = DISCLAIMER_SECTIONS.join(String.fromCharCode(10) + String.fromCharCode(10));
 
 export class DisclaimerModal {
@@ -24,10 +45,11 @@ export class DisclaimerModal {
     return new Promise<boolean>((resolve) => {
       const overlay = document.createElement("div");
       overlay.className = "modal-overlay";
-      const body = DISCLAIMER_SECTIONS.map((s) => "<p>" + s + "</p>").join("");
+      const body = getDisclaimerSections().map((s) => "<p>" + s + "</p>").join("");
       overlay.innerHTML = [
         '<div class="modal disclaimer-modal">'
         , '  <h3>' + i18n.t("disclaimer.title") + '</h3>'
+        , modalBarHtml("dm")
         , '  <div class="disclaimer-scroll" tabindex="0">' + body + '</div>'
         , '  <div class="disclaimer-note" hidden>' + i18n.t("disclaimer.need.scroll") + '</div>'
         , '  <div class="modal-actions">'
@@ -39,6 +61,7 @@ export class DisclaimerModal {
       document.body.appendChild(overlay);
       setModalAria(overlay, "dm-title");
       trapFocus(overlay);
+      bindModalBar("dm");
       const scrollEl = overlay.querySelector<HTMLElement>(".disclaimer-scroll")!;
       const agree = overlay.querySelector<HTMLButtonElement>("#dm-agree")!;
       const cancel = overlay.querySelector<HTMLButtonElement>("#dm-cancel")!;
