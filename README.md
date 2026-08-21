@@ -80,6 +80,42 @@ npm run build
 
 将 `dist/` 部署到任意静态服务器（Nginx / GitHub Pages / Vercel 等）。需正确提供 `application/wasm` MIME 类型（`serve.mjs` 已内置）。Service Worker 建议部署在 HTTPS 或 localhost 下使用。
 
+## PWA 应用
+
+S-ENC-001 是一个渐进式 Web 应用（PWA）：可通过 `manifest.json` 安装到桌面或移动端，并借助 Service Worker（`/sw.js`）离线运行。
+
+### 应用清单（manifest.json）
+
+| 项 | 值 |
+| --- | --- |
+| 名称 | S-ENC-001 Secure Terminal（短名 S-ENC-001） |
+| 显示模式 | standalone（安装后以独立窗口运行，无浏览器地址栏） |
+| 图标 | `icon-192.png` / `icon-512.png`（`purpose: any maskable`，同时适配普通与自适应图标） |
+| 主题色 | `#000000`（背景色与主题色一致，配合深色终端风格） |
+
+### 缓存策略
+
+Service Worker 由 `scripts/build-sw.mjs`（esbuild IIFE）构建，缓存命名 `s-enc-001-v2`，仅处理同源 GET 请求：
+
+| 请求类型 | 策略 |
+| --- | --- |
+| 页面导航、`/wasm/` 资源 | network-first：优先网络，成功后更新缓存；离线时回退缓存 |
+| 其余静态资源（JS/CSS/图标等） | cache-first：优先缓存，未命中再请求网络并写入缓存 |
+
+新版本部署后，`install` 阶段 `skipWaiting` 立即接管，`activate` 阶段自动清理旧版本缓存。
+
+### 安装方式
+
+- **桌面（Chrome / Edge）**：地址栏右侧出现安装图标，点击「安装 S-ENC-001」；或在菜单 → 安装应用
+- **Android（Chrome）**：菜单 → 添加到主屏幕 / 安装应用
+- **iOS（Safari）**：分享按钮 → 添加到主屏幕（iOS 上所有浏览器均基于 WebKit，行为一致）
+
+### 使用限制
+
+- Service Worker 仅在 **HTTPS 或 localhost** 下注册（浏览器安全限制）；`start.bat` 本地服务（`http://localhost:4173`）满足条件
+- 首次访问需联网完成资源缓存；之后可完全离线使用
+- 应用本身始终零网络请求——离线能力只用于加载本地静态资源，加密运算全程在设备内完成
+
 ## 测试
 
 ```bash

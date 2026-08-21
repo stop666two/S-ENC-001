@@ -28,6 +28,7 @@
 - **Modal 无障碍**：全部弹窗 role=dialog + aria-modal + aria-labelledby + Tab 焦点陷阱循环
 
 ### Changed
+- **README 新增 PWA 章节**：应用清单（manifest.json 名称/图标/standalone/主题色）、缓存策略（导航与 `/wasm/` network-first、其余 cache-first、`skipWaiting` + 旧缓存自动清理）、桌面/Android/iOS 安装方式、HTTPS 或 localhost 使用限制与离线说明
 - **UI 精简重构**：删除哈希 / HMAC 校验 / 批量任务三个按钮；[加密] 改为两步式（先选 文件加密 / 文本加密）；主界面仅保留 加密/解密/密码生成/恢复短语/一键清除 + 语言/主题
 - **错误密码真静默**：10 秒静默延迟保留（防时序攻击），但删除「密码错误将静默等待 10 秒」提示与「验证中」日志，解密失败状态立即恢复就绪
 - **压缩级别扩展**：1/3/5/9/19（默认 5），原 1–9 默认 3；Rust 侧 clamp 上限 1–19
