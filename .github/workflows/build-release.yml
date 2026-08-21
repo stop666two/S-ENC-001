@@ -43,9 +43,11 @@ jobs:
       - name: Build WASM core
         working-directory: wasm
         env:
-          CC: zig cc -target wasm32-freestanding
-          CC_wasm32_unknown_unknown: zig cc -target wasm32-freestanding
-        run: wasm-pack build --target web --release
+          CC: ${{ github.workspace }}/tools/clang-ci.sh
+          CC_wasm32_unknown_unknown: ${{ github.workspace }}/tools/clang-ci.sh
+        run: |
+          chmod +x "$GITHUB_WORKSPACE/tools/clang-ci.sh"
+          wasm-pack build --target web --release
 
       - name: Sync WASM to public
         run: |
