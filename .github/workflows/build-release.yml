@@ -82,8 +82,9 @@ jobs:
         run: |
           TS="$(TZ=Asia/Shanghai date +%Y-%m-%d-%H%M%S)"
           echo "TS=$TS" >> "$GITHUB_ENV"
-          zip -r "dist-$TS.zip" dist
+          (cd dist && zip -r "../dist-$TS.zip" .)
           ls -lh "dist-$TS.zip"
+          unzip -l "dist-$TS.zip" | head -20
 
       - name: Create GitHub Release
         env:
