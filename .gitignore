@@ -12,7 +12,9 @@ wasm/pkg/
 public/wasm/
 
 # ===== Local toolchains (zig, winlibs - downloaded by build.bat) =====
-tools/
+tools/*
+!tools/clang.cmd
+!tools/clang-ci.sh
 
 # ===== AGENTS.md must NEVER be committed (project rule) =====
 AGENTS.md
@@ -39,6 +41,7 @@ Thumbs.db
 *.tmp
 # Temp files
 wasm/src/_wordlist_array.txt
+action-log/
 
 # playwright MCP artifacts
 .playwright-mcp/
