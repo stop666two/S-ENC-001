@@ -11,6 +11,7 @@ import { ConfirmModal } from "./ui/confirmModal";
 import { ResultModal, DecryptResultItem } from "./ui/resultModal";
 import { PhraseModal } from "./ui/phraseModal";
 import { DisclaimerModal, DISCLAIMER_SECTIONS } from "./ui/disclaimerModal";
+import { checkBrowser, showBrowserReport } from "./ui/browserCheck";
 import { MainWorker, WorkerEvent } from "./worker/mainWorker";
 import { triggerDownload } from "./core/download";
 import { ClipboardManager } from "./core/clipboard";
@@ -494,6 +495,14 @@ class App {
 let disclaimerAcceptedThisSession = false;
 
 async function bootstrap(): Promise<void> {
+  const check = checkBrowser();
+  if (check.criticalMissing) {
+    showBrowserReport(check, () => { void bootstrap(); });
+    return;
+  }
+  if (check.optionalMissing) {
+    await showBrowserReport(check);
+  }
   if (localStorage.getItem("s-enc-disclaimer-accepted") === "1") {
     disclaimerAcceptedThisSession = true;
   } else {
@@ -515,9 +524,10 @@ async function bootstrap(): Promise<void> {
 void bootstrap();
 
 // PWA: register service worker (https or localhost only)
-if ("serviceWorker" in navigator) {
+const swReg = (navigator as { serviceWorker?: { register?: (url: string) => Promise<unknown> } }).serviceWorker?.register;
+if (typeof swReg === "function") {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").catch(() => {
+    swReg("/sw.js").catch(() => {
       // SW registration is optional; works on https/localhost
     });
   });

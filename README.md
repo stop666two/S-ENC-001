@@ -128,6 +128,27 @@ S-ENC-001/
 - 运行环境：现代浏览器（Chrome / Edge / Firefox / Safari，含移动端），需支持 WebAssembly、Web Worker、Crypto API
 - 版本锁定：`package.json` 与 `wasm/Cargo.toml` 均锁定精确版本（无范围符），构建可复现
 
+## 浏览器兼容性
+
+启动时会自动检测浏览器能力。检测结果分两类：
+
+| 类型 | 检测项 | 缺失时行为 |
+| --- | --- | --- |
+| 关键（硬性限制） | WebAssembly、Web Worker、Web Crypto API（crypto.subtle）、TextEncoder/TextDecoder | 阻止进入，显示缺失项与推荐浏览器安装指南 |
+| 可选（软性警告） | Clipboard API、Service Worker | 仅提示，可关闭后继续使用（Clipboard 有 execCommand 兜底） |
+
+推荐使用最新版 **Google Chrome**、**Mozilla Firefox** 或 **Microsoft Edge**（Windows 10/11 自带）。安装指南：
+
+| 设备 | Chrome | Firefox | Edge |
+| --- | --- | --- | --- |
+| Windows 桌面 | https://www.google.com/chrome/ | https://www.mozilla.org/firefox/ | Windows 10/11 自带，或 https://www.microsoft.com/edge |
+| macOS 桌面 | https://www.google.com/chrome/ | https://www.mozilla.org/firefox/ | https://www.microsoft.com/edge |
+| Linux 桌面 | https://www.google.com/chrome/ | 多数发行版自带 | https://www.microsoft.com/edge |
+| Android 手机/平板 | Google Play 搜索 Chrome | Google Play 搜索 Firefox | Google Play 搜索 Microsoft Edge |
+| iPhone / iPad | App Store 搜索 Chrome | App Store 搜索 Firefox | App Store 搜索 Microsoft Edge |
+
+> iOS 上所有浏览器（含 Chrome/Firefox/Edge）均基于 WebKit 内核，功能表现一致，安装任意一个即可。检测报告弹窗内置完整安装指引（含各平台官方链接）。
+
 ## 相关文档
 
 - [界面风格规范 docs/UI-STYLE.md](docs/UI-STYLE.md) — 终端美学风格契约（重构时必须遵守）

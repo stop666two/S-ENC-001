@@ -6,6 +6,7 @@
 ## [Unreleased]
 
 ### Added
+- **浏览器兼容性检测**：启动时检测 WebAssembly/Web Worker/Web Crypto/TextEncoder/Decoder（关键项，缺失阻止进入）、Clipboard API/Service Worker（可选项，缺失仅警告）；报告弹窗内置 Windows/macOS/Linux/Android/iOS × Chrome/火狐/Edge 官方安装指南与重新检测按钮
 - **文本加密自定义文件名**：加密表单可选填文件名与后缀（非法字符自动替换为 `-`），留空默认 `text.enc`，带占位符与提示
 - **协议常驻日志顶部**：同意免责声明后，每次刷新页面或点击一键清除，终端日志区顶部先显示协议全文，再显示日志内容（此前仅同意当次打印且位于底部）
 - **复制全文失败反馈**：`navigator.clipboard` 不可用（非安全上下文：局域网 IP / file://）时自动回退 `execCommand("copy")`，仍失败则按钮显示「复制失败，请手动选择文本」
